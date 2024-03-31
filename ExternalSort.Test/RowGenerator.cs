@@ -9,7 +9,7 @@ public class RowGenerator
             .RuleFor(u => u.Lastname, f => f.Name.LastName())
             .RuleFor(u => u.Avatar, f => f.Internet.Avatar())
             .RuleFor(u => u.Username, (f, u) => f.Internet.UserName(u.Firstname, u.Lastname))
-            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.Firstname, u.Lastname))
+            .RuleFor(u => u.Email, (f, u) => $"{f.Internet.Email(u.Firstname, u.Lastname)} {f.UniqueIndex}")
             .RuleFor(u => u.SomethingUnique, f => $"Value {f.UniqueIndex}")
             .RuleFor(u => u.SomeGuid, Guid.NewGuid);
         
