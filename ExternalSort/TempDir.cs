@@ -6,7 +6,7 @@ internal class TempDir : IDisposable
     
     public TempDir()
     {
-        var dir = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+        var dir = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "ExternalSort_" +Guid.NewGuid().ToString()));
         dir.Create();
         _dir = dir;
     }

@@ -4,6 +4,8 @@ using Parquet.Serialization;
 
 namespace ExternalSort;
 
+internal readonly record struct OrderByPair<T, TK>(Func<T, TK> KeySelector, OrderBy OrderBy);
+
 internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : IComparable
 {
     private readonly int _mbLimit;
@@ -16,32 +18,30 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
     private int _createdFiles;
     private readonly IComparer<T> _comparer;
 
-    public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, Func<T, TK> keySelector, OrderBy orderBy)
+    public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, OrderByPair<T, TK> orderByPair)
     {
         _calculateBytesInRam = calculateBytesInRam;
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
-        _comparer =  new ObjComparer(keySelector, orderBy);
+        _comparer =  new ObjComparer(orderByPair);
     }
 
     private class ObjComparer : IComparer<T>
     {
-        private readonly Func<T, TK> _keySelector;
-        private readonly OrderBy _orderBy;
+        private readonly OrderByPair<T, TK> _orderByPair;
         private readonly Comparer<TK> _keyComparer = Comparer<TK>.Default;
     
-        public ObjComparer(Func<T, TK> keySelector, OrderBy orderBy)
+        public ObjComparer(OrderByPair<T, TK> orderByPair)
         {
-            _keySelector = keySelector;
-            _orderBy = orderBy;
+            _orderByPair = orderByPair;
         }
     
         public int Compare(T? x, T? y)
         {
-            var xKey = _keySelector(x);
-            var yKey = _keySelector(y);
+            var xKey = _orderByPair.KeySelector(x);
+            var yKey = _orderByPair.KeySelector(y);
 
-            return (_orderBy == OrderBy.Asc ? 1 : -1) * _keyComparer.Compare(xKey, yKey);
+            return (_orderByPair.OrderBy == OrderBy.Asc ? 1 : -1) * _keyComparer.Compare(xKey, yKey);
         }
     }
 

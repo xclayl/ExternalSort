@@ -79,14 +79,14 @@ public class UnitTest1
     
     
     [Fact]
-    public async Task HappyPath_HugeNumberOfTempFiles()
+    public async Task HappyPath_110TempFiles()
     {
-        var sourceCount = 100_000_000;
+        var sourceCount = 110_000;
         var source = RowGenerator.GenerateUsers(sourceCount);
 
         var actual = source
             .OrderByExternal(u => u.Email)
-            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize());
+            .OptimiseFor(calculateBytesInRam: u => 1_000, mbLimit: 1, openFilesLimit: 10);
 
         var actualCount = 0;
         await foreach (var row in actual)
