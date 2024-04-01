@@ -42,6 +42,25 @@ public class UnitTest1
     }
 
     
+    
+    [Fact]
+    public async Task HappyPath_2TempFilesDescending()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
+
+        var actual = await source.ToAsyncList()
+            .OrderByDescendingExternal(u => u.Email)
+            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+        
+        var expected = source.OrderByDescending(u => u.Email).ToList();
+        
+        actual.Should().Equal(expected);
+    }
+
+    
     [Fact]
     public async Task HappyPath_20TempFiles()
     {

@@ -4,10 +4,10 @@ using Parquet.Serialization;
 
 namespace ExternalSort;
 
-public class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : IComparable
+internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : IComparable
 {
-    private const int MbLimit = 200;
-    private const int OpenFilesLimit = 10;
+    private readonly int _mbLimit;
+    private readonly int _openFilesLimit;
 
     private readonly TempDir _tempDir = new();
     private readonly List<FileInfo> _tempFiles = new();
@@ -16,20 +16,24 @@ public class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : I
     private int _createdFiles;
     private readonly IComparer<T> _comparer;
 
-    public ExternalSorter(Func<T,long> calculateBytesInRam, Func<T, TK> keySelector)
+    public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, Func<T, TK> keySelector, OrderBy orderBy)
     {
         _calculateBytesInRam = calculateBytesInRam;
-        _comparer =  new ObjComparer(keySelector);
+        _mbLimit = mbLimit;
+        _openFilesLimit = openFilesLimit;
+        _comparer =  new ObjComparer(keySelector, orderBy);
     }
 
     private class ObjComparer : IComparer<T>
     {
         private readonly Func<T, TK> _keySelector;
+        private readonly OrderBy _orderBy;
         private readonly Comparer<TK> _keyComparer = Comparer<TK>.Default;
     
-        public ObjComparer(Func<T, TK> keySelector)
+        public ObjComparer(Func<T, TK> keySelector, OrderBy orderBy)
         {
             _keySelector = keySelector;
+            _orderBy = orderBy;
         }
     
         public int Compare(T? x, T? y)
@@ -37,7 +41,7 @@ public class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : I
             var xKey = _keySelector(x);
             var yKey = _keySelector(y);
 
-            return _keyComparer.Compare(xKey, yKey);
+            return (_orderBy == OrderBy.Asc ? 1 : -1) * _keyComparer.Compare(xKey, yKey);
         }
     }
 
@@ -47,7 +51,7 @@ public class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : I
     }
 
     
-    private int RowGroupSize => _batchRowLimit / OpenFilesLimit;
+    private int RowGroupSize => _batchRowLimit / _openFilesLimit;
     
     public async ValueTask SplitAndSortEach(IAsyncEnumerable<T> src)
     {
@@ -55,7 +59,7 @@ public class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : I
         var batchSizeInBytes = 0L;
         
         var currentBatch = new List<T>();
-        var byteLimit = MbLimit * 1024 * 1024;
+        var byteLimit = _mbLimit * 1024 * 1024;
         await foreach (var row in src)
         {
             if (isFirstBatch)
@@ -106,9 +110,9 @@ public class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : I
 
     public async ValueTask MergeSortFiles()
     {
-        while (_tempFiles.Count > OpenFilesLimit)
+        while (_tempFiles.Count > _openFilesLimit)
         {
-            var fileGroups = _tempFiles.Batch(OpenFilesLimit).ToList();
+            var fileGroups = _tempFiles.Batch(_openFilesLimit).ToList();
             var oldTempFiles = _tempFiles.ToArray();
             _tempFiles.Clear();
             foreach (var fileGroup in fileGroups)

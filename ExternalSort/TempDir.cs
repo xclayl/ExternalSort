@@ -1,6 +1,6 @@
 ﻿namespace ExternalSort;
 
-public class TempDir : IDisposable
+internal class TempDir : IDisposable
 {
     private DirectoryInfo _dir;
     

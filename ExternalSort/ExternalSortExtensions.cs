@@ -13,7 +13,18 @@ public static class ExternalSortExtensions
     /// </summary>
     public static IExternalSortAsyncEnumerable<T> OrderByExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector) where T : new() 
     {
-        return new ExternalSortAsyncEnumerable<T, TK>(src, keySelector);
+        return new ExternalSortAsyncEnumerable<T, TK>(src, keySelector, OrderBy.Asc);
+    }
+    
+        
+    /// <summary>
+    /// Sorts data that occupies more RAM than is available, by using temporary files.
+    /// See https://josef.codes/sorting-really-large-files-with-c-sharp/ and https://en.wikipedia.org/wiki/External_sorting
+    /// Parquet files are used for temporarily persisting to disk.  See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
+    /// </summary>
+    public static IExternalSortAsyncEnumerable<T> OrderByDescendingExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector) where T : new() 
+    {
+        return new ExternalSortAsyncEnumerable<T, TK>(src, keySelector, OrderBy.Desc);
     }
 
 
