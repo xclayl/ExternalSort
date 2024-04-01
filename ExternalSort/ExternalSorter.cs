@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System.Collections.ObjectModel;
+using System.IO.Compression;
 using Parquet;
 using Parquet.Serialization;
 
@@ -18,30 +19,35 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
     private int _createdFiles;
     private readonly IComparer<T> _comparer;
 
-    public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, OrderByPair<T, TK> orderByPair)
+    public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, ReadOnlyCollection<IComparer<T>> orderByPairs)
     {
         _calculateBytesInRam = calculateBytesInRam;
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
-        _comparer =  new ObjComparer(orderByPair);
+        _comparer =  new ObjComparer(orderByPairs);
     }
 
     private class ObjComparer : IComparer<T>
     {
-        private readonly OrderByPair<T, TK> _orderByPair;
-        private readonly Comparer<TK> _keyComparer = Comparer<TK>.Default;
+        private readonly ReadOnlyCollection<IComparer<T>> _orderByPairs;
     
-        public ObjComparer(OrderByPair<T, TK> orderByPair)
+        public ObjComparer(ReadOnlyCollection<IComparer<T>> orderByPairs)
         {
-            _orderByPair = orderByPair;
+            _orderByPairs = orderByPairs;
         }
     
         public int Compare(T? x, T? y)
         {
-            var xKey = _orderByPair.KeySelector(x);
-            var yKey = _orderByPair.KeySelector(y);
+            for (var i = 0; i < _orderByPairs.Count; i++)
+            {
+                var orderByPair = _orderByPairs[i];
+                var val = orderByPair.Compare(x, y);
 
-            return (_orderByPair.OrderBy == OrderBy.Asc ? 1 : -1) * _keyComparer.Compare(xKey, yKey);
+                if (val != 0)
+                    return val;
+            }
+
+            return 0;
         }
     }
 

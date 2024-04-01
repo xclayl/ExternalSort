@@ -60,6 +60,46 @@ public class UnitTest1
         actual.Should().Equal(expected);
     }
 
+        
+    
+    [Fact]
+    public async Task HappyPath_2TempFilesMultiColumn()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
+
+        var actual = await source.ToAsyncList()
+            .OrderByExternal(u => u.Firstname)
+            .ThenBy(u => u.SomethingUnique)
+            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+        
+        var expected = source.OrderBy(u => u.Firstname).ThenBy(u => u.SomethingUnique).ToList();
+        
+        actual.Should().Equal(expected);
+    }
+
+
+    [Fact]
+    public async Task HappyPath_2TempFilesMultiColumnDescending()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
+
+        var actual = await source.ToAsyncList()
+            .OrderByExternal(u => u.Firstname)
+            .ThenByDescending(u => u.SomethingUnique)
+            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+        
+        var expected = source.OrderBy(u => u.Firstname).ThenByDescending(u => u.SomethingUnique).ToList();
+        
+        actual.Should().Equal(expected);
+    }
+
+
     
     [Fact]
     public async Task HappyPath_20TempFiles()
