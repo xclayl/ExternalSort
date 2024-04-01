@@ -11,7 +11,9 @@ public class UnitTest1
     {
         var source = await RowGenerator.GenerateUsers(10).ToListAsync();
 
-        var actual = await source.ToAsyncList().OrderByExternal(u => u.Email, u => u.CalculateSize())
+        var actual = await source.ToAsyncList()
+            .OrderByExternal(u => u.Email)
+            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize())
             .ToListAsync();
 
         actual.Should().HaveCount(source.Count);
@@ -27,7 +29,9 @@ public class UnitTest1
     {
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
-        var actual = await source.ToAsyncList().OrderByExternal(u => u.Email, u => u.CalculateSize() * 100 /* pretend these use more RAM */)
+        var actual = await source.ToAsyncList()
+            .OrderByExternal(u => u.Email)
+            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
             .ToListAsync();
 
         actual.Should().HaveCount(source.Count);
@@ -43,7 +47,9 @@ public class UnitTest1
     {
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
-        var actual = await source.ToAsyncList().OrderByExternal(u => u.Email, u => u.CalculateSize() * 1_000 /* pretend these use more RAM */)
+        var actual = await source.ToAsyncList()
+            .OrderByExternal(u => u.Email)
+            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 1_000 /* pretend these use more RAM */)
             .ToListAsync();
 
         actual.Should().HaveCount(source.Count);
@@ -59,7 +65,9 @@ public class UnitTest1
         var sourceCount = 100_000_000;
         var source = RowGenerator.GenerateUsers(sourceCount);
 
-        var actual = source.OrderByExternal(u => u.Email, u => u.CalculateSize());
+        var actual = source
+            .OrderByExternal(u => u.Email)
+            .OptimiseFor(calculateBytesInRam: u => u.CalculateSize());
 
         var actualCount = 0;
         await foreach (var row in actual)
