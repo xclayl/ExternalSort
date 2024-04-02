@@ -135,4 +135,56 @@ public class UnitTest1
         actualCount.Should().Be(sourceCount);
     }
 
+    
+    [Fact]
+    public async Task Error_InvalidCalculateBytesInRam()
+    {
+        var sourceCount = 110_000;
+        var source = RowGenerator.GenerateUsers(sourceCount);
+
+        var actual = source
+            .OrderByExternal(u => u.Email)
+            .OptimiseFor(calculateBytesInRam: u => 0);
+
+        var actualCount = 0;
+        
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await foreach (var row in actual)
+                actualCount++;
+        });
+       
+
+    }
+    
+    
+    [Fact]
+    public async Task Error_InvalidMbLimit()
+    {
+        var sourceCount = 110_000;
+        var source = RowGenerator.GenerateUsers(sourceCount);
+        
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            var actual = source
+                .OrderByExternal(u => u.Email)
+                .OptimiseFor(mbLimit: 0);
+        });
+    }
+    
+    [Fact]
+    public async Task Error_InvalidOpenFilesLimit()
+    {
+        var sourceCount = 110_000;
+        var source = RowGenerator.GenerateUsers(sourceCount);
+        
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            var actual = source
+                .OrderByExternal(u => u.Email)
+                .OptimiseFor(openFilesLimit: 1);
+        });
+    }
 }
+
+

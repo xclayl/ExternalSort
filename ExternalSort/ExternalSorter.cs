@@ -72,7 +72,11 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
         {
             if (isFirstBatch)
             {
-                batchSizeInBytes += _calculateBytesInRam(row);
+                var itemBytes = _calculateBytesInRam(row);
+                if (itemBytes <= 0)
+                    throw new ArgumentException($"calculateBytesInRam() returned an invalid non-positive number: {itemBytes}");
+                batchSizeInBytes += itemBytes;
+                
                 if (batchSizeInBytes > byteLimit)
                     _batchRowLimit = currentBatch.Count;
             }

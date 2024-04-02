@@ -40,6 +40,10 @@ internal class ExternalSortAsyncEnumerable<T, TK> : IExternalSortAsyncEnumerable
     
     public IExternalSortAsyncEnumerable<T> OptimiseFor(Func<T, long>? calculateBytesInRam = null, int? mbLimit = null, int? openFilesLimit = null)
     {
+        if (mbLimit <= 0)
+            throw new ArgumentException($"{nameof(mbLimit)} is an invalid non-positive number: {mbLimit}");
+        if (openFilesLimit <= 1)
+            throw new ArgumentException($"{nameof(openFilesLimit)} must be 2 or greater.  Found: {openFilesLimit}");
         return new ExternalSortAsyncEnumerable<T, TK>(calculateBytesInRam ?? _calculateBytesInRam, mbLimit ?? _mbLimit, openFilesLimit ?? _openFilesLimit, _src, _orderByPairs);
     }
 
