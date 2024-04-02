@@ -154,51 +154,85 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
         }
     }
 
+    private record struct ReaderInfo(IAsyncEnumerator<T> Reader, bool Active, T Head);
+
+    private static bool AnyActive(ReaderInfo[] readers)
+    {
+        for(int i = 0; i < readers.Length; i++)
+            if (readers[i].Active)
+                return true;
+
+        return false;
+    }
+
+    private int FindMinHeadPos(ReaderInfo[] readers)
+    {
+        // Easy way:
+        // var minPos = headRows
+        //     .Select((r, i) => (r, i))
+        //     .Where(r => readers[r.i].Active)
+        //     .MinBy(a => a.r.Head, _comparer)
+        //     .i;
+        
+        // Fast way:
+        var minPos = -1;
+        var minVal = default(T);
+        for (int i = 0; i < readers.Length; i++)
+        {
+            if (readers[i].Active)
+                if (minPos == -1)
+                {
+                    minPos = i;
+                    minVal = readers[i].Head;
+                }
+                else
+                    if (_comparer.Compare(minVal, readers[i].Head) > 0)
+                    {
+                        minPos = i;
+                        minVal = readers[i].Head;
+                    }
+        }
+
+        return minPos;
+    }
+    
     private async IAsyncEnumerable<T> MergeReader(FileInfo[] srcFiles)
     {
-        var readers = srcFiles.Select(Reader).ToList();
+        var readers = new ReaderInfo[srcFiles.Length];
+        for (int i = 0; i < srcFiles.Length; i++)
+            readers[i] = new(CreateReader(srcFiles[i]), false, default(T));
+        
         try
         {
-            var readersActive = readers.Select(r => true).ToList();
-
-            var headRows = new T[readers.Count];
-            
-            foreach (var (reader, index) in readers.Select((r, i) => (r, i)))
+            for(int i = 0; i < readers.Length; i++)
             {
-                readersActive[index] = await reader.MoveNextAsync();
-                if (readersActive[index])
-                {
-                    headRows[index] = reader.Current;
-                }
+                readers[i].Active = await readers[i].Reader.MoveNextAsync();
+                if (readers[i].Active)
+                    readers[i].Head = readers[i].Reader.Current;
             }
             
-            while (readersActive.Any(r => r))
+            while (AnyActive(readers))
             {
-                var minPos = headRows
-                    .Select((r, i) => (r, i))
-                    .Where(r => readersActive[r.i])
-                    .MinBy(a => a.r, _comparer)
-                    .i;
+                var minPos = FindMinHeadPos(readers);
 
-                yield return headRows[minPos];
+                yield return readers[minPos].Head;
 
-                readersActive[minPos] = await readers[minPos].MoveNextAsync();
-                if (readersActive[minPos])
-                    headRows[minPos] = readers[minPos].Current;
+                readers[minPos].Active = await readers[minPos].Reader.MoveNextAsync();
+                if (readers[minPos].Active)
+                    readers[minPos].Head = readers[minPos].Reader.Current;
             }
-
-
+            
         }
         finally
         {
             foreach (var reader in readers)
-                await reader.DisposeAsync();
+                await reader.Reader.DisposeAsync();
         }
 
 
     }
 
-    private async IAsyncEnumerator<T> Reader(FileInfo srcFile)
+    private async IAsyncEnumerator<T> CreateReader(FileInfo srcFile)
     {
         await using var stream = srcFile.OpenRead();
         await foreach (var row in ParquetSerializer.DeserializeAllAsync<T>(stream))
