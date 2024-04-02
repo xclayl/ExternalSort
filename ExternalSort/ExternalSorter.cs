@@ -19,6 +19,8 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
     private int _createdFiles;
     private readonly IComparer<T> _comparer;
 
+    private List<T>? _singleBatchShortcut;
+
     public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, ReadOnlyCollection<IComparer<T>> orderByPairs)
     {
         _calculateBytesInRam = calculateBytesInRam;
@@ -99,8 +101,15 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
         
         if (currentBatch.Any())
         {
+          
             currentBatch.Sort(_comparer);
-                
+            if (!_tempFiles.Any())
+            {
+                _singleBatchShortcut = currentBatch;
+                return;
+            }
+
+            
             var currentFile = new FileInfo(Path.Combine(_tempDir.FullName, $"{_createdFiles++}.parquet"));
             _tempFiles.Add(currentFile);
             isFirstBatch = false;
@@ -116,6 +125,9 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
 
     public async ValueTask MergeSortFiles()
     {
+        if (_singleBatchShortcut != null)
+            return;
+        
         while (_tempFiles.Count > _openFilesLimit)
         {
             var fileGroups = _tempFiles.Batch(_openFilesLimit).ToList();
@@ -241,6 +253,16 @@ internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK :
 
     public IAsyncEnumerable<T> MergeRead()
     {
+        if (_singleBatchShortcut != null)
+            return ToAsyncList(_singleBatchShortcut);
         return MergeReader(_tempFiles.ToArray());
+    }
+
+    private static async IAsyncEnumerable<T> ToAsyncList(IEnumerable<T> src)
+    {
+        foreach (var item in src)
+        {
+            yield return item;
+        }
     }
 }
