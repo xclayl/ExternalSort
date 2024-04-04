@@ -4,10 +4,24 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>1.0.0-beta001</Version>
+        <Title>ExternalSort</Title>
+        <Authors>Clay Lenhart</Authors>
+        <Description>Sorts data that is larger than available RAM.</Description>
+        <Copyright>Copyright (c) Clay Lenhart 2024</Copyright>
+        <PackageProjectUrl></PackageProjectUrl>
+        <RepositoryUrl>https://github.com/xclayl/ExternalSort</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Sorting, External Sort</PackageTags>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Parquet.Net" Version="4.23.4" />
     </ItemGroup>
-
+    <ItemGroup>
+        <None Include="../readme.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 </Project>
