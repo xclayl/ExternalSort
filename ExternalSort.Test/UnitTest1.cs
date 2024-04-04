@@ -136,6 +136,25 @@ public class UnitTest1
     }
 
     
+    
+    [Fact(Skip = "Takes 5 minutes")]
+    public async Task HappyPath_10MillionSpeedTest()
+    {
+        var sourceCount = 10_000_000;
+        var source = RowGenerator.GenerateUsers(sourceCount);
+
+        var actual = source
+            .OrderByExternal(u => u.Email)
+            .OptimiseFor(mbLimit: 50);
+
+        var actualCount = 0;
+        await foreach (var row in actual)
+            actualCount++;
+
+        actualCount.Should().Be(sourceCount);
+    }
+
+    
     [Fact]
     public async Task Error_InvalidCalculateBytesInRam()
     {
