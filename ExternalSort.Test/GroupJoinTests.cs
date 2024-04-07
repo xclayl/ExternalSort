@@ -149,7 +149,7 @@ public class GroupJoinTests
 
 /*
  * * GroupJoin (left outer join) 
- * ExceptBy (not in)
+ * * ExceptBy (not in)
  * IntersectBy (inner join)
  * not sure how: (full outer join). possible if both have unique keys
  * DistinctBy
