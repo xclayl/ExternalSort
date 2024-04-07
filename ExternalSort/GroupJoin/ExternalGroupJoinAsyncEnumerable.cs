@@ -90,12 +90,15 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         var first = true;
         await foreach (var outer in groupBy.ReadOuter().WithCancellation(cancellationToken))
         {
-            innerList.Clear();
-
             var outerKey = _outerKeySelector(outer);
+            
             if (!first && _keyComparer.Compare(previousOuterKey, outerKey) == 0)
-                throw new Exception($"Duplicate outer key value {outerKey}");
+            {
+                yield return _resultSelector(outer, innerList);
+                continue;
+            }
 
+            innerList.Clear();
             previousOuterKey = outerKey;
             
             await groupBy.ReadInner(outerKey, innerList);

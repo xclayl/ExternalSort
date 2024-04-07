@@ -28,6 +28,30 @@ public class GroupJoinTests
         actual.Single(a => a.Parent == 3).Children.Should().BeEmpty();
     }
     
+    
+    
+    [Fact]
+    public void GroupJoinBehaviourDuplicates()
+    {
+        List<int> parents = [1, 1, 3];
+        List<(int parent, int val)> children = [(1, 100), (1, 101), (2, 200)];
+
+        var actual = parents
+            .GroupJoin(children, u => u, uc => uc.parent, (u, ucs) => new
+            {
+                Parent = u,
+                Children = ucs.ToList()
+            })
+            .ToList();
+
+        actual.Should().HaveCount(3);
+        actual.Select(a => a.Parent).Should().BeEquivalentTo([1, 1, 3]);
+        
+        actual[0].Children.Should().BeEquivalentTo([(1, 100), (1, 101)]);
+        actual[1].Children.Should().BeEquivalentTo([(1, 100), (1, 101)]);
+        actual[2].Children.Should().BeEmpty();
+    }
+    
     [Fact]
     public async Task GroupJoinExternalBehaviour()
     {
@@ -48,6 +72,29 @@ public class GroupJoinTests
         actual.Single(a => a.Parent == 1).Children.Should().BeEquivalentTo([(1, 100), (1, 101)]);
         actual.Where(a => a.Parent == 2).Should().BeEmpty();
         actual.Single(a => a.Parent == 3).Children.Should().BeEmpty();
+    }
+    
+    
+    [Fact]
+    public async Task GroupJoinExternalBehaviour2()
+    {
+        List<int> parents = [1, 1, 3];
+        List<(int parent, int val)> children = [(1, 100), (1, 101), (2, 200)];
+
+        var actual = await parents.ToAsyncList()
+            .GroupJoinExternal(children.ToAsyncList(), u => u, uc => uc.parent, (u, ucs) => new
+            {
+                Parent = u,
+                Children = ucs.ToList()
+            })
+            .ToListAsync();
+
+        actual.Should().HaveCount(3);
+        actual.Select(a => a.Parent).Should().BeEquivalentTo([1, 1, 3]);
+        
+        actual[0].Children.Should().BeEquivalentTo([(1, 100), (1, 101)]);
+        actual[1].Children.Should().BeEquivalentTo([(1, 100), (1, 101)]);
+        actual[2].Children.Should().BeEmpty();
     }
 
 
@@ -97,30 +144,6 @@ public class GroupJoinTests
     
     
     
-    [Fact]
-    public async Task Error_NonUniqueOuterKey()
-    {
-        var source = await RowGenerator.GenerateUsers(5).ToListAsync();
-
-        source[1] = source[1] with
-        {
-            Email = source[2].Email
-        };
-
-        var children = source.Select(s => s.Email).Distinct().Select(e => new Scalar<string>(e)).ToList().ToAsyncList();
-        
-        var actualEnum = source.ToAsyncList()
-            .GroupJoinExternal(children, u => u.Email, c => c.Value, (p, cs) => new
-            {
-                Parent = p,
-                Children = cs.ToList()
-            });
-        
-        await Assert.ThrowsAsync<Exception>(async () =>
-        {
-            var actual = await actualEnum.ToListAsync();
-        });
-    }
 }
 
 
@@ -131,4 +154,5 @@ public class GroupJoinTests
  * not sure how: (full outer join). possible if both have unique keys
  * DistinctBy
  * GroupBy
+ * Implicit scalars: string, "where T : IBinaryInteger<T>", Guid
 */

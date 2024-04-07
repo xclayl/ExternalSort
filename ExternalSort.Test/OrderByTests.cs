@@ -43,7 +43,7 @@ public class OrderByTests
 
         
     [Fact]
-    public async Task HappyPath_2TempFilesWithScalar()
+    public async Task HappyPath_2TempFilesWithExplicitScalar()
     {
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
