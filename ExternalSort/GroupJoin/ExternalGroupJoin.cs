@@ -1,6 +1,6 @@
-﻿namespace ExternalSort.GroupBy;
+﻿namespace ExternalSort.GroupJoin;
 
-internal class ExternalGroupBy<TOuter, TInner, TKey, TResult> : IAsyncDisposable where TOuter : new() where TInner : new()
+internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposable where TOuter : new() where TInner : new()
 {
     private readonly Func<TOuter, long> _calculateOuterBytesInRam;
     private readonly Func<TInner, long> _calculateInnerBytesInRam;
@@ -16,7 +16,7 @@ internal class ExternalGroupBy<TOuter, TInner, TKey, TResult> : IAsyncDisposable
     private TInner? _next;
     private TKey? _nextKey;
 
-    public ExternalGroupBy(Func<TOuter,long> calculateOuterBytesInRam, Func<TInner, long> calculateInnerBytesInRam, 
+    public ExternalGroupJoin(Func<TOuter,long> calculateOuterBytesInRam, Func<TInner, long> calculateInnerBytesInRam, 
         int mbLimit, int openFilesLimit, IComparer<TKey> keyComparer, IAsyncEnumerable<TOuter> outerSource,
         IAsyncEnumerable<TInner> innerSource, Func<TOuter, TKey> outerKeySelector, Func<TInner, TKey> innerKeySelector)
     {

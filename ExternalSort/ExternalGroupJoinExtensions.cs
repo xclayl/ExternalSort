@@ -1,8 +1,8 @@
-﻿using ExternalSort.GroupBy;
+﻿using ExternalSort.GroupJoin;
 
 namespace ExternalSort;
 
-public static class ExternalGroupByExtensions
+public static class ExternalGroupJoinExtensions
 {
     /// <summary>
     /// Performs a GroupJoin on data that is too large for RAM.  This works like a 'left join', where 'outer' is the left side.
@@ -17,7 +17,7 @@ public static class ExternalGroupByExtensions
         Func<TInner, TKey> innerKeySelector,
         Func<TOuter, IEnumerable<TInner>, TResult> resultSelector) where TOuter : new() where TInner : new()
     {
-        return new ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult>(outer, inner, outerKeySelector,
+        return new ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult>(outer, inner, outerKeySelector,
             innerKeySelector, resultSelector);
     }
 }

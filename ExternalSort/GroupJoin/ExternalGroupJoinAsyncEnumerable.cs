@@ -1,6 +1,6 @@
-﻿namespace ExternalSort.GroupBy;
+﻿namespace ExternalSort.GroupJoin;
 
-internal class ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult> : IExternalGroupJoinAsyncEnumerable<TOuter, TInner, TResult> 
+internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> : IExternalGroupJoinAsyncEnumerable<TOuter, TInner, TResult> 
     where TOuter : new() where TInner : new()
 {
     private readonly Func<TOuter, long> _calculateOuterBytesInRam = o => 300;
@@ -15,7 +15,7 @@ internal class ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult> : I
     private readonly Func<TOuter, IEnumerable<TInner>, TResult> _resultSelector;
 
     
-    public ExternalGroupByAsyncEnumerable(
+    public ExternalGroupJoinAsyncEnumerable(
         IAsyncEnumerable<TOuter> outerSource,
         IAsyncEnumerable<TInner> innerSource,
         Func<TOuter, TKey> outerKeySelector,
@@ -30,7 +30,7 @@ internal class ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult> : I
         _resultSelector = resultSelector;
     }
 
-    private ExternalGroupByAsyncEnumerable(Func<TOuter, long> calculateOuterBytesInRam, 
+    private ExternalGroupJoinAsyncEnumerable(Func<TOuter, long> calculateOuterBytesInRam, 
         Func<TInner, long> calculateInnerBytesInRam,
         int mbLimit,
         int openFilesLimit,
@@ -58,7 +58,7 @@ internal class ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult> : I
     public IExternalGroupJoinAsyncEnumerable<TOuter, TInner, TResult> OptimiseFor(Func<TOuter, long>? calculateOuterBytesInRam = null,
         Func<TInner, long>? calculateInnerBytesInRam = null, int? mbLimit = null, int? openFilesLimit = null)
     {
-        return new ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult>(calculateOuterBytesInRam ?? _calculateOuterBytesInRam,
+        return new ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult>(calculateOuterBytesInRam ?? _calculateOuterBytesInRam,
             calculateInnerBytesInRam ?? _calculateInnerBytesInRam,
             mbLimit ?? _mbLimit,
             openFilesLimit ?? _openFilesLimit,
@@ -75,7 +75,7 @@ internal class ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult> : I
     public async IAsyncEnumerator<TResult> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken())
     {
        
-        await using var groupBy = new ExternalGroupBy<TOuter, TInner, TKey, TResult>(_calculateOuterBytesInRam,
+        await using var groupBy = new ExternalGroupJoin<TOuter, TInner, TKey, TResult>(_calculateOuterBytesInRam,
             _calculateInnerBytesInRam,
             _mbLimit,
             _openFilesLimit,

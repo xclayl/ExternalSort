@@ -125,10 +125,10 @@ public class GroupJoinTests
 
 
 /*
- * Error if there are duplicate rows
+ * * GroupJoin (left outer join) 
+ * ExceptBy (not in)
+ * IntersectBy (inner join)
+ * not sure how: (full outer join). possible if both have unique keys
  * DistinctBy
- * ExceptBy
  * GroupBy
- * IntersectBy
- * Test with scalar value lists (List<int>)
 */
