@@ -94,4 +94,41 @@ public class GroupJoinTests
         actual.Select(u => u.User.UserGuid).Should().Equal(users.Select(u => u.UserGuid).OrderBy(u => u).ToList());
     }
 
+    
+    
+    
+    [Fact]
+    public async Task Error_NonUniqueOuterKey()
+    {
+        var source = await RowGenerator.GenerateUsers(5).ToListAsync();
+
+        source[1] = source[1] with
+        {
+            Email = source[2].Email
+        };
+
+        var children = source.Select(s => s.Email).Distinct().Select(e => new Scalar<string>(e)).ToList().ToAsyncList();
+        
+        var actualEnum = source.ToAsyncList()
+            .GroupJoinExternal(children, u => u.Email, c => c.Value, (p, cs) => new
+            {
+                Parent = p,
+                Children = cs.ToList()
+            });
+        
+        await Assert.ThrowsAsync<Exception>(async () =>
+        {
+            var actual = await actualEnum.ToListAsync();
+        });
+    }
 }
+
+
+/*
+ * Error if there are duplicate rows
+ * DistinctBy
+ * ExceptBy
+ * GroupBy
+ * IntersectBy
+ * Test with scalar value lists (List<int>)
+*/

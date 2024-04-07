@@ -41,6 +41,27 @@ public class OrderByTests
         actual.Should().Equal(expected);
     }
 
+        
+    [Fact]
+    public async Task HappyPath_2TempFilesWithScalar()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
+
+        var actual = await source
+            .Select(u => new Scalar<string>(u.Email))
+            .ToAsyncList()
+            .OrderByExternal(u => u)
+            .OptimiseFor(calculateBytesInRam: u => 1_000 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+        
+        var expected = source.OrderBy(u => u.Email).Select(u => u.Email).ToList();
+        
+        actual.Select(u => u.Value).Should().Equal(expected);
+    }
+
+
     
     
     [Fact]

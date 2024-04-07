@@ -86,12 +86,21 @@ internal class ExternalGroupByAsyncEnumerable<TOuter, TInner, TKey, TResult> : I
             _innerKeySelector);
 
         var innerList = new List<TInner>();
+        TKey previousOuterKey = default!;
+        var first = true;
         await foreach (var outer in groupBy.ReadOuter().WithCancellation(cancellationToken))
         {
             innerList.Clear();
 
-            await groupBy.ReadInner(_outerKeySelector(outer), innerList);
+            var outerKey = _outerKeySelector(outer);
+            if (!first && _keyComparer.Compare(previousOuterKey, outerKey) == 0)
+                throw new Exception($"Duplicate outer key value {outerKey}");
+
+            previousOuterKey = outerKey;
+            
+            await groupBy.ReadInner(outerKey, innerList);
             yield return _resultSelector(outer, innerList);
+            first = false;
         }
     }
 
