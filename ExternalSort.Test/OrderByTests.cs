@@ -1,6 +1,6 @@
 namespace ExternalSort.Test;
 
-public class UnitTest1
+public class OrderByTests
 {
 
     

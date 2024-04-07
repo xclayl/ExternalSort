@@ -1,8 +1,9 @@
 ﻿using System.Runtime.CompilerServices;
+using ExternalSort.OrderBy;
 
 namespace ExternalSort;
 
-public static class ExternalSortExtensions
+public static class ExternalOrderByExtensions
 {
 
     
@@ -11,9 +12,9 @@ public static class ExternalSortExtensions
     /// See https://josef.codes/sorting-really-large-files-with-c-sharp/ and https://en.wikipedia.org/wiki/External_sorting
     /// Parquet files are used for temporarily persisting to disk.  See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
     /// </summary>
-    public static IExternalSortAsyncEnumerable<T> OrderByExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector) where T : new() 
+    public static IExternalOrderByAsyncEnumerable<T> OrderByExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector) where T : new() 
     {
-        return new ExternalSortAsyncEnumerable<T, TK>(src, keySelector, OrderBy.Asc);
+        return new ExternalOrderByAsyncEnumerable<T, TK>(src, keySelector, OrderBy.OrderBy.Asc);
     }
     
         
@@ -22,9 +23,9 @@ public static class ExternalSortExtensions
     /// See https://josef.codes/sorting-really-large-files-with-c-sharp/ and https://en.wikipedia.org/wiki/External_sorting
     /// Parquet files are used for temporarily persisting to disk.  See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
     /// </summary>
-    public static IExternalSortAsyncEnumerable<T> OrderByDescendingExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector) where T : new() 
+    public static IExternalOrderByAsyncEnumerable<T> OrderByDescendingExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector) where T : new() 
     {
-        return new ExternalSortAsyncEnumerable<T, TK>(src, keySelector, OrderBy.Desc);
+        return new ExternalOrderByAsyncEnumerable<T, TK>(src, keySelector, OrderBy.OrderBy.Desc);
     }
 
 

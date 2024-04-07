@@ -1,4 +1,6 @@
-﻿namespace ExternalSort;
+﻿using ExternalSort.OrderBy;
+
+namespace ExternalSort.Shared;
 
 internal class ObjKeyComparer<T, TK> : IComparer<T>
 {
@@ -14,7 +16,7 @@ internal class ObjKeyComparer<T, TK> : IComparer<T>
     {
         var xKey = _orderByPair.KeySelector(x);
         var yKey = _orderByPair.KeySelector(y);
-        return (_orderByPair.OrderBy == OrderBy.Asc ? 1 : -1) * _keyComparer.Compare(xKey, yKey);
+        return (_orderByPair.OrderBy == OrderBy.OrderBy.Asc ? 1 : -1) * _keyComparer.Compare(xKey, yKey);
         
     }
 }

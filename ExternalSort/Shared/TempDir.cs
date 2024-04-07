@@ -1,4 +1,4 @@
-﻿namespace ExternalSort;
+﻿namespace ExternalSort.Shared;
 
 internal class TempDir : IDisposable
 {

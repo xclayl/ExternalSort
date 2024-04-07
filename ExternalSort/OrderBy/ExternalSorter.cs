@@ -1,13 +1,14 @@
 ﻿using System.Collections.ObjectModel;
 using System.IO.Compression;
+using ExternalSort.Shared;
 using Parquet;
 using Parquet.Serialization;
 
-namespace ExternalSort;
+namespace ExternalSort.OrderBy;
 
 internal readonly record struct OrderByPair<T, TK>(Func<T, TK> KeySelector, OrderBy OrderBy);
 
-internal class ExternalSorter<T, TK> : IDisposable where T : new() // where TK : IComparable
+internal class ExternalSorter<T> : IDisposable where T : new() // where TK : IComparable
 {
     private readonly int _mbLimit;
     private readonly int _openFilesLimit;
