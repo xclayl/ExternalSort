@@ -48,7 +48,7 @@ public class OrderByTests
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
         var actual = await source
-            .Select(u => new Scalar<string>(u.Email))
+            .Select(u => new Scalar<string> { Value = u.Email })
             .ToAsyncList()
             .OrderByExternal(u => u)
             .OptimiseFor(calculateBytesInRam: u => 1_000 /* pretend these use more RAM */)
@@ -59,6 +59,64 @@ public class OrderByTests
         var expected = source.OrderBy(u => u.Email).Select(u => u.Email).ToList();
         
         actual.Select(u => u.Value).Should().Equal(expected);
+    }
+
+
+        
+    [Fact]
+    public async Task HappyPath_2TempFilesWithInt()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).Select((e, i) => i).ToListAsync();
+
+        var actual = await source
+            .ToAsyncList()
+            .OrderByExternal(u => u)
+            .OptimiseFor(calculateBytesInRam: u => 1_000 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+        
+        var expected = source.OrderBy(u => u).Select(u => u).ToList();
+        
+        actual.Select(u => u).Should().Equal(expected);
+    }
+
+        
+    [Fact]
+    public async Task HappyPath_2TempFilesWithLong()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).Select((u, i) => (long)i).ToListAsync();
+
+        var actual = await source
+            .ToAsyncList()
+            .OrderByExternal(u => u)
+            .OptimiseFor(calculateBytesInRam: u => 1_000 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+        
+        var expected = source.OrderBy(u => u).Select(u => u).ToList();
+        
+        actual.Select(u => u).Should().Equal(expected);
+    }
+
+        
+    [Fact]
+    public async Task HappyPath_2TempFilesWithGuid()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).Select(u => u.UserGuid).ToListAsync();
+
+        var actual = await source
+            .ToAsyncList()
+            .OrderByExternal(u => u)
+            .OptimiseFor(calculateBytesInRam: u => 1_000 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+        
+        var expected = source.OrderBy(u => u).Select(u => u).ToList();
+        
+        actual.Select(u => u).Should().Equal(expected);
     }
 
 

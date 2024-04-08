@@ -10,12 +10,12 @@
         <Authors>Clay Lenhart</Authors>
         <Description>Sorts data that is larger than available RAM.</Description>
         <Copyright>Copyright (c) Clay Lenhart 2024</Copyright>
-        <PackageProjectUrl></PackageProjectUrl>
         <RepositoryUrl>https://github.com/xclayl/ExternalSort</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Sorting, External Sort</PackageTags>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>

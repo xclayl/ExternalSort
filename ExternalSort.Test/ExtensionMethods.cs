@@ -16,5 +16,18 @@ public static class ExtensionMethods
             yield return item;
     }
 
+    public static async IAsyncEnumerable<TResult> Select<T, TResult>(this IAsyncEnumerable<T> items, Func<T, TResult> projection)
+    {
+        await foreach (var item in items)
+            yield return projection(item);
+    }
+
+    public static async IAsyncEnumerable<TResult> Select<T, TResult>(this IAsyncEnumerable<T> items, Func<T, int, TResult> projection)
+    {
+        var i = 0;
+        await foreach (var item in items)
+            yield return projection(item, i++);
+    }
+
     
 }

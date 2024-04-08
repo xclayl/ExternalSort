@@ -1,10 +1,11 @@
 ﻿namespace ExternalSort;
 
-public readonly record struct Scalar<T>(T Value) : IComparable<Scalar<T>>
+public record Scalar<T>(T Value) : IComparable<Scalar<T>>
 {
+    
     private readonly Comparer<T> _comparer = Comparer<T>.Default;
     
-    public Scalar() : this(default)
+    public Scalar(): this(default(T))
     {
     }
 

@@ -119,6 +119,9 @@ public class GroupJoinTests
         actual.Select(u => u.User.UserGuid).Should().Equal(users.Select(u => u.UserGuid).OrderBy(u => u).ToList());
     }
     
+    
+    
+    
     [Fact]
     public async Task HappyPath_2TempFiles()
     {
@@ -142,6 +145,30 @@ public class GroupJoinTests
     }
 
     
+    [Fact]
+    public async Task HappyPath_2TempFilesWithInts()
+    {
+        var userIds = await RowGenerator.GenerateUsers(10_000).Select((u, i) => i).ToListAsync();
+        var userIds2 = userIds.Concat(userIds).ToList();
+
+        var actual = await userIds.ToAsyncList()
+            .GroupJoinExternal(userIds2.ToAsyncList(), u => u, uc => uc, (u, ucs) => new
+            {
+                UserId = u,
+                SubUserIds = ucs.ToList()
+            })
+            .OptimiseFor(calculateInnerBytesInRam: u => 30_000 /* pretend these use more RAM */,
+                calculateOuterBytesInRam: u => 30_000 /* pretend these use more RAM */)
+            .ToListAsync();
+
+        actual.Should().HaveCount(userIds.Count);
+        actual.SelectMany(u => u.SubUserIds).Should().HaveCount(userIds2.Count);
+
+        actual.Select(u => u.UserId).Should().Equal(userIds.OrderBy(u => u).ToList());
+    }
+
+
+
     
     
 }
