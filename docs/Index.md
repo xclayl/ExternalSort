@@ -1,7 +1,7 @@
 ﻿
 ## Documentation
 
-[OrderByExternal](OrderByExternal.md) - Sorting data
+[OrderByExternal](OrderByExternal.md) - ORDER BY
 
 [GroupJoinExternal](GroupJoinExternal.md) - LEFT OUTER JOIN
 

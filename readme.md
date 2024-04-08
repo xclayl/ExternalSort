@@ -1,8 +1,8 @@
 ﻿## External Sort
 
-Contains various utilities to sort and join large amounts of data that is larger than the amount of RAM available.
+Contains various utilities to sort and join large amounts of data that is larger than the amount of available RAM.
 
-[Documentation]
+[Documentation](https://github.com/xclayl/ExternalSort/blob/master/docs/Index.md)
 
 ### OrderByExternal()
 
@@ -14,8 +14,9 @@ Sort IAsyncEnumerable&lt;T> data.
     .OrderByExternal(u => u.Email);
 ```
 
+### GroupJoinExternal()
 
-GroupJoin (left outer join) IAsyncEnumerable&lt;T> data.
+GroupJoin (left outer join) on IAsyncEnumerable&lt;T> data.
 
 ```
   IAsyncEnumerable<User> myUsers = ...
@@ -30,7 +31,8 @@ GroupJoin (left outer join) IAsyncEnumerable&lt;T> data.
 ```
 
 
-ExceptBy (NOT IN) IAsyncEnumerable&lt;T> data.
+### ExceptByExternal()
+ExceptBy (NOT IN) on IAsyncEnumerable&lt;T> data.
 
 ```
   IAsyncEnumerable<User> myUsers = ...
