@@ -1,52 +1,46 @@
 ﻿## External Sort
 
-Sorts data (IAsyncEnumerable&lt;T>) that is larger than the amount of RAM available.
+Contains various utilities to sort and join large amounts of data that is larger than the amount of RAM available.
 
-basic example
+[Documentation]
 
-```
-  IAsyncEnumerable<User> myUsersToSort = ...
-  var sortedUsers = myUsersToSort
-            .OrderByExternal(u => u.Email);
-```
+### OrderByExternal()
 
-### Behaviour
-
- * *Unstable sort* - the rows that 'tie' will be returned in an undefined way
- * *O(n log n)* - best case performance when the data fits in RAM.  The more RAM constrained it is, the slower it will sort by writing to disk more often. More performance details here https://en.wikipedia.org/wiki/External_sorting, but I find it complicated comparing RAM speed & disk speed.
- * No disk activity when data fits in RAM
-
-### Options / Features
-
-Sort Descending
+Sort IAsyncEnumerable&lt;T> data.
 
 ```
   IAsyncEnumerable<User> myUsersToSort = ...
   var sortedUsers = myUsersToSort
-            .OrderByDescendingExternal(u => u.Email);
+    .OrderByExternal(u => u.Email);
 ```
 
-Sort on multiple properties
+
+GroupJoin (left outer join) IAsyncEnumerable&lt;T> data.
 
 ```
-  IAsyncEnumerable<User> myUsersToSort = ...
-  var sortedUsers = myUsersToSort
-            .OrderByExternal(u => u.Email)
-            .ThenBy(u => u.FirstName)
-            .ThenByDescending(u => u.UserId);
+  IAsyncEnumerable<User> myUsers = ...
+  IAsyncEnumerable<UserComments> myUserComments = ...
+  
+  var joinedUsersAndComments = myUsersToSort
+    .GroupJoinExternal(myUserComments, u => u.UserId, uc => uc.UserId, (user, comments) => new
+    {
+        User = user,
+        Comments = comments.ToList()
+    });
 ```
 
-Control the amount of RAM used
+
+ExceptBy (NOT IN) IAsyncEnumerable&lt;T> data.
+
 ```
-  IAsyncEnumerable<User> myUsersToSort = ...
-  var sortedUsers = myUsersToSort
-            .OrderByExternal(u => u.Email)
-            .OptimiseFor(calculateBytesInRam: u => u.CalculateBytesInRam(), mbLimit: 1_000, openFilesLimit: 10);
+  IAsyncEnumerable<User> myUsers = ...
+  IAsyncEnumerable<int> myStaffUserIds = ...
+  
+  var nonStaffUsers = myUsers
+    .ExceptByExternal(myStaffUserIds, u => u.UserId);
 ```
 
-* *calculateBytesInRam* - You can provide a function to calculate how much ram the row occupies in RAM.  Not calculated for every row, but enough to get an average. Default = 300 bytes
-* *mbLimit* - The rough limit how much RAM to use to sort the data.  In practice this is not exact, but it will never be unlimited. Default = 200 MB
-* *openFilesLimit* - The number of files open at one time.  A larger number can reduce the disk activity needed to sort, but then each file has a smaller buffer and can become too "chatty" with the disk.  Buffer size for one temp file = mbLimit / openFileLimit.  Default = 10
+
 
 Internally, ExternalSort uses Parquet temp files.   See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
 

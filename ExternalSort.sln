@@ -4,6 +4,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExternalSort", "ExternalSor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExternalSort.Test", "ExternalSort.Test\ExternalSort.Test.csproj", "{935619A5-764E-44A2-81D3-F83980DC124A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{30823C78-EE2B-476B-8196-8BFAA404E253}"
+	ProjectSection(SolutionItems) = preProject
+		docs\OrderByExternal.md = docs\OrderByExternal.md
+		docs\Index.md = docs\Index.md
+		docs\GroupJoinExternal.md = docs\GroupJoinExternal.md
+		docs\ExceptByExternal.md = docs\ExceptByExternal.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
