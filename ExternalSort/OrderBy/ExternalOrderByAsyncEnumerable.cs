@@ -17,6 +17,7 @@ internal class ExternalOrderByAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnum
     private readonly int _openFilesLimit = 10;
     private readonly List<IComparer<T>> _orderByPairs;
     private readonly IAsyncEnumerable<T> _src;
+    private readonly string? _tempDir;
 
     
     internal ExternalOrderByAsyncEnumerable(IAsyncEnumerable<T> src, Func<T, TK> keySelector, OrderBy orderBy)
@@ -25,13 +26,14 @@ internal class ExternalOrderByAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnum
         _orderByPairs = [new ObjKeyComparer<T,TK>(new(keySelector, orderBy))];
     }
     
-    private ExternalOrderByAsyncEnumerable(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, IAsyncEnumerable<T> src, List<IComparer<T>> orderByPairs)
+    private ExternalOrderByAsyncEnumerable(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, IAsyncEnumerable<T> src, List<IComparer<T>> orderByPairs, string? tempDir)
     {
         _calculateBytesInRam = calculateBytesInRam;
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
         _src = src;
         _orderByPairs = orderByPairs;
+        _tempDir = tempDir;
     }
     
     public IExternalOrderByAsyncEnumerable<T> OptimiseFor(Func<T, long>? calculateBytesInRam = null, int? mbLimit = null, int? openFilesLimit = null)
@@ -40,24 +42,29 @@ internal class ExternalOrderByAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnum
             throw new ArgumentException($"{nameof(mbLimit)} is an invalid non-positive number: {mbLimit}");
         if (openFilesLimit <= 1)
             throw new ArgumentException($"{nameof(openFilesLimit)} must be 2 or greater.  Found: {openFilesLimit}");
-        return new ExternalOrderByAsyncEnumerable<T, TK>(calculateBytesInRam ?? _calculateBytesInRam, mbLimit ?? _mbLimit, openFilesLimit ?? _openFilesLimit, _src, _orderByPairs);
+        return new ExternalOrderByAsyncEnumerable<T, TK>(calculateBytesInRam ?? _calculateBytesInRam, mbLimit ?? _mbLimit, openFilesLimit ?? _openFilesLimit, _src, _orderByPairs, _tempDir);
+    }
+
+    public IExternalOrderByAsyncEnumerable<T> UseTempDir(string dir)
+    {
+        return new ExternalOrderByAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src, _orderByPairs, dir);
     }
 
     public IExternalOrderByAsyncEnumerable<T> ThenBy<TK1>(Func<T, TK1> keySelector)
     {
         return new ExternalOrderByAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
-            _orderByPairs.Concat([new ObjKeyComparer<T,TK1>(new (keySelector, OrderBy.Asc))]).ToList());
+            _orderByPairs.Concat([new ObjKeyComparer<T,TK1>(new (keySelector, OrderBy.Asc))]).ToList(), _tempDir);
     }
 
     public IExternalOrderByAsyncEnumerable<T> ThenByDescending<TK1>(Func<T, TK1> keySelector)
     {
         return new ExternalOrderByAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
-            _orderByPairs.Concat([new ObjKeyComparer<T,TK1>(new (keySelector, OrderBy.Desc))]).ToList());
+            _orderByPairs.Concat([new ObjKeyComparer<T,TK1>(new (keySelector, OrderBy.Desc))]).ToList(), _tempDir);
     }
 
     public async IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = new())
     {
-        using var sorter = new ExternalSorter<T>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _orderByPairs.AsReadOnly());
+        using var sorter = new ExternalSorter<T>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _orderByPairs.AsReadOnly(), _tempDir);
         await sorter.SplitAndSortEach(_src);
         await sorter.MergeSortFiles();
         await foreach (var row in sorter.MergeRead().WithCancellation(cancellationToken))
@@ -73,6 +80,7 @@ internal class ExternalOrderByScalarAsyncEnumerable<T, TK> : IExternalOrderByAsy
     private readonly int _openFilesLimit = 10;
     private readonly List<IComparer<Scalar<T>>> _orderByPairs;
     private readonly IAsyncEnumerable<Scalar<T>> _src;
+    private readonly string? _tempDir;
 
     
     internal ExternalOrderByScalarAsyncEnumerable(IAsyncEnumerable<T> src, Func<T, TK> keySelector, OrderBy orderBy)
@@ -81,13 +89,14 @@ internal class ExternalOrderByScalarAsyncEnumerable<T, TK> : IExternalOrderByAsy
         _orderByPairs = [new ObjKeyComparer<Scalar<T>,TK>(new(o => keySelector(o.Value), orderBy))];
     }
     
-    private ExternalOrderByScalarAsyncEnumerable(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, IAsyncEnumerable<Scalar<T>> src, List<IComparer<Scalar<T>>> orderByPairs)
+    private ExternalOrderByScalarAsyncEnumerable(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, IAsyncEnumerable<Scalar<T>> src, List<IComparer<Scalar<T>>> orderByPairs, string? tempDir)
     {
         _calculateBytesInRam = calculateBytesInRam;
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
         _src = src;
         _orderByPairs = orderByPairs;
+        _tempDir = tempDir;
     }
     
     public IExternalOrderByAsyncEnumerable<T> OptimiseFor(Func<T, long>? calculateBytesInRam = null, int? mbLimit = null, int? openFilesLimit = null)
@@ -96,24 +105,29 @@ internal class ExternalOrderByScalarAsyncEnumerable<T, TK> : IExternalOrderByAsy
             throw new ArgumentException($"{nameof(mbLimit)} is an invalid non-positive number: {mbLimit}");
         if (openFilesLimit <= 1)
             throw new ArgumentException($"{nameof(openFilesLimit)} must be 2 or greater.  Found: {openFilesLimit}");
-        return new ExternalOrderByScalarAsyncEnumerable<T, TK>(calculateBytesInRam ?? _calculateBytesInRam, mbLimit ?? _mbLimit, openFilesLimit ?? _openFilesLimit, _src, _orderByPairs);
+        return new ExternalOrderByScalarAsyncEnumerable<T, TK>(calculateBytesInRam ?? _calculateBytesInRam, mbLimit ?? _mbLimit, openFilesLimit ?? _openFilesLimit, _src, _orderByPairs, _tempDir);
+    }
+
+    public IExternalOrderByAsyncEnumerable<T> UseTempDir(string dir)
+    {
+        return new ExternalOrderByScalarAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src, _orderByPairs, _tempDir);
     }
 
     public IExternalOrderByAsyncEnumerable<T> ThenBy<TK1>(Func<T, TK1> keySelector)
     {
         return new ExternalOrderByScalarAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
-            _orderByPairs.Concat([new ObjKeyComparer<Scalar<T>,TK1>(new (o => keySelector(o.Value), OrderBy.Asc))]).ToList());
+            _orderByPairs.Concat([new ObjKeyComparer<Scalar<T>,TK1>(new (o => keySelector(o.Value), OrderBy.Asc))]).ToList(), _tempDir);
     }
 
     public IExternalOrderByAsyncEnumerable<T> ThenByDescending<TK1>(Func<T, TK1> keySelector)
     {
         return new ExternalOrderByScalarAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
-            _orderByPairs.Concat([new ObjKeyComparer<Scalar<T>,TK1>(new (o => keySelector(o.Value), OrderBy.Desc))]).ToList());
+            _orderByPairs.Concat([new ObjKeyComparer<Scalar<T>,TK1>(new (o => keySelector(o.Value), OrderBy.Desc))]).ToList(), _tempDir);
     }
 
     public async IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = new())
     {
-        using var sorter = new ExternalSorter<Scalar<T>>(v => _calculateBytesInRam(v.Value), _mbLimit, _openFilesLimit, _orderByPairs.AsReadOnly());
+        using var sorter = new ExternalSorter<Scalar<T>>(v => _calculateBytesInRam(v.Value), _mbLimit, _openFilesLimit, _orderByPairs.AsReadOnly(), _tempDir);
         await sorter.SplitAndSortEach(_src);
         await sorter.MergeSortFiles();
         await foreach (var row in sorter.MergeRead().WithCancellation(cancellationToken))

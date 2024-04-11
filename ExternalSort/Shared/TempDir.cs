@@ -4,9 +4,14 @@ internal class TempDir : IDisposable
 {
     private DirectoryInfo _dir;
     
-    public TempDir()
+    public TempDir(string? tempDir)
     {
-        var dir = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "ExternalSort_" +Guid.NewGuid().ToString()));
+        var tempPath = tempDir ?? Path.Combine(Path.GetTempPath(), "ExternalSort_" + Guid.NewGuid());
+        
+        var dir = new DirectoryInfo(tempPath);
+        if (dir.Exists)
+            throw new Exception(
+                $"Temp directory, {tempPath}, exists.  Provide a path that doesn't exist, and this code will delete the directory when it finishes");
         dir.Create();
         _dir = dir;
     }

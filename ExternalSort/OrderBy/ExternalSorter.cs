@@ -13,7 +13,7 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
     private readonly int _mbLimit;
     private readonly int _openFilesLimit;
 
-    private readonly TempDir _tempDir = new();
+    private readonly TempDir _tempDir;
     private readonly List<FileInfo> _tempFiles = new();
     private readonly Func<T, long> _calculateBytesInRam;
     private int _batchRowLimit;
@@ -22,12 +22,14 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
 
     private List<T>? _singleBatchShortcut;
 
-    public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, ReadOnlyCollection<IComparer<T>> orderByPairs)
+    public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, ReadOnlyCollection<IComparer<T>> orderByPairs,
+        string? tempDir)
     {
         _calculateBytesInRam = calculateBytesInRam;
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
         _comparer =  new ObjComparer(orderByPairs);
+        _tempDir = new TempDir(tempDir);
     }
 
     private class ObjComparer : IComparer<T>
