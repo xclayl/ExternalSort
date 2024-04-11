@@ -136,7 +136,7 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
         while (_tempFiles.Count > _openFilesLimit)
         {
             var fileGroups = _tempFiles.Batch(_openFilesLimit).ToList();
-            var oldTempFiles = _tempFiles.ToArray();
+         
             _tempFiles.Clear();
             foreach (var fileGroup in fileGroups)
             {
@@ -144,11 +144,9 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
                 _tempFiles.Add(destFile);
 
                 await MergeSortFiles(fileGroup, destFile);
-            }
-
-            foreach (var oldTempFile in oldTempFiles)
-            {
-                oldTempFile.Delete();
+                
+                foreach (var oldTempFile in fileGroup)
+                    oldTempFile.Delete();
             }
         }
     }
