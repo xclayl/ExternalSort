@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{30823C78-E
 		docs\Index.md = docs\Index.md
 		docs\GroupJoinExternal.md = docs\GroupJoinExternal.md
 		docs\ExceptByExternal.md = docs\ExceptByExternal.md
+		docs\DistinctExternal = docs\DistinctExternal
 	EndProjectSection
 EndProject
 Global

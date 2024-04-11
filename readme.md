@@ -43,6 +43,18 @@ ExceptBy (NOT IN) on IAsyncEnumerable&lt;T> data.
 ```
 
 
+### DistinctExternal()
+Distinct on IAsyncEnumerable&lt;T> data.
+
+```
+  IAsyncEnumerable<User> myUsers = ...
+  IAsyncEnumerable<int> myUserAges = myUsers.Select(u => u.Age)
+  
+  var distinctAges = myUserAges
+    .DistinctExternal();
+```
+
+
 
 Internally, ExternalSort uses Parquet temp files.   See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
 

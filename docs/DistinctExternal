@@ -1,0 +1,5 @@
+﻿## External Sort - DistinctExternal
+
+Mirrors .Net's Distinct() extension method for IAsyncEnumerable<T> for data that is larger than the available RAM.
+
+TODO

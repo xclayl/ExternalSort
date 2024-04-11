@@ -5,4 +5,6 @@
 
 [GroupJoinExternal](GroupJoinExternal.md) - LEFT OUTER JOIN
 
-[ExceptByExternal](ExceptByExternal.md) - NOT IN
+[ExceptByExternal](ExceptByExternal.md) - DISTINCT + NOT IN
+
+[DistinctExternal](DistinctExternal.md) - DISTINCT

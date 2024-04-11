@@ -65,7 +65,7 @@ internal static class SharedExtensionMethods
     
     
     
-    internal static async IAsyncEnumerable<T> WhenKeyChanges<T, TKey>(this IAsyncEnumerable<T> source, Func<T, TKey> keySelector, IComparer<TKey> comparer)
+    internal static async IAsyncEnumerable<T> DistinctUsingOrderedInput<T, TKey>(this IAsyncEnumerable<T> source, Func<T, TKey> keySelector, IComparer<TKey> comparer)
     {
         var first = true;
         TKey previousKey = default;
@@ -80,5 +80,24 @@ internal static class SharedExtensionMethods
             first = false;
         }
     }
+    
+    
+    internal static async IAsyncEnumerable<T> DistinctUsingOrderedInput<T>(this IAsyncEnumerable<T> source) where T : IComparable<T>
+    {
+        var first = true;
+        T previousItem = default;
+
+        var comparer = Comparer<T>.Default;
+        
+        await foreach (var item in source)
+        {
+            if (first || comparer.Compare(previousItem, item) != 0)
+                yield return item;
+
+            previousItem = item;
+            first = false;
+        }
+    }
+
 
 }

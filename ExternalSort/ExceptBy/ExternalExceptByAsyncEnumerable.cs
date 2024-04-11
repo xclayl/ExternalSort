@@ -49,7 +49,7 @@ internal class ExternalExceptByAsyncEnumerable<TSource, TKey> : IExternalExceptB
         return pairRows
             .Where(r => !r.HasAnyFromSecond)
             .Select(r => r.Item)
-            .WhenKeyChanges(_keySelector, _keyComparer)
+            .DistinctUsingOrderedInput(_keySelector, _keyComparer)
             .GetAsyncEnumerator(cancellationToken);
     }
 
