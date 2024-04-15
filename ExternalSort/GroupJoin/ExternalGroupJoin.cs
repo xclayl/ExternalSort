@@ -15,10 +15,12 @@ internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposab
     private bool _innerReaderHasNext;
     private TInner? _next;
     private TKey? _nextKey;
+    private readonly CancellationToken _abort;
 
     public ExternalGroupJoin(Func<TOuter,long> calculateOuterBytesInRam, Func<TInner, long> calculateInnerBytesInRam, 
         int mbLimit, int openFilesLimit, IComparer<TKey> keyComparer, IAsyncEnumerable<TOuter> outerSource,
-        IAsyncEnumerable<TInner> innerSource, Func<TOuter, TKey> outerKeySelector, Func<TInner, TKey> innerKeySelector)
+        IAsyncEnumerable<TInner> innerSource, Func<TOuter, TKey> outerKeySelector, Func<TInner, TKey> innerKeySelector,
+        CancellationToken abort)
     {
         _calculateOuterBytesInRam = calculateOuterBytesInRam;
         _calculateInnerBytesInRam = calculateInnerBytesInRam;
@@ -29,7 +31,7 @@ internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposab
         _outerKeySelector = outerKeySelector;
         _innerKeySelector = innerKeySelector;
 
-        _innerReader = innerSource.OrderByExternal(_innerKeySelector)
+        _innerReader = innerSource.OrderByExternal(_innerKeySelector, abort)
             .OptimiseFor(_calculateInnerBytesInRam, Math.Max(_mbLimit / 2, 1), Math.Max(_openFilesLimit / 2, 2))
             .GetAsyncEnumerator();
 
@@ -39,12 +41,14 @@ internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposab
 
         _next = default;
         _nextKey = default;
+
+        _abort = abort;
     }
 
 
     public IAsyncEnumerable<TOuter> ReadOuter()
     {
-        return _outerSource.OrderByExternal(_outerKeySelector)
+        return _outerSource.OrderByExternal(_outerKeySelector, _abort)
             .OptimiseFor(_calculateOuterBytesInRam, Math.Max(_mbLimit / 2, 1), Math.Max(_openFilesLimit / 2, 2));
     }
 

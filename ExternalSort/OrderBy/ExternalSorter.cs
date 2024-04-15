@@ -19,17 +19,19 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
     private int _batchRowLimit;
     private int _createdFiles;
     private readonly IComparer<T> _comparer;
+    private readonly CancellationToken _abort;
 
     private List<T>? _singleBatchShortcut;
 
     public ExternalSorter(Func<T, long> calculateBytesInRam, int mbLimit, int openFilesLimit, ReadOnlyCollection<IComparer<T>> orderByPairs,
-        string? tempDir)
+        string? tempDir, CancellationToken abort)
     {
         _calculateBytesInRam = calculateBytesInRam;
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
         _comparer =  new ObjComparer(orderByPairs);
         _tempDir = new TempDir(tempDir);
+        _abort = abort;
     }
 
     private class ObjComparer : IComparer<T>
@@ -73,6 +75,8 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
         var byteLimit = _mbLimit * 1024 * 1024;
         await foreach (var row in src)
         {
+            _abort.ThrowIfCancellationRequested();
+            
             if (isFirstBatch)
             {
                 var itemBytes = _calculateBytesInRam(row);
@@ -116,6 +120,7 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
                 return;
             }
 
+            _abort.ThrowIfCancellationRequested();
             
             var currentFile = new FileInfo(Path.Combine(_tempDir.FullName, $"{_createdFiles++}.parquet"));
             _tempFiles.Add(currentFile);
@@ -161,6 +166,7 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
 
         await foreach (var batch in batches)
         {
+            _abort.ThrowIfCancellationRequested();
             await ParquetSerializer.SerializeAsync(batch, destFile.FullName, new ParquetSerializerOptions
             {
                 CompressionLevel = CompressionLevel.Fastest,
@@ -230,6 +236,8 @@ internal class ExternalSorter<T> : IDisposable where T : new() // where TK : ICo
             
             while (AnyActive(readers))
             {
+                _abort.ThrowIfCancellationRequested();
+                
                 var minPos = FindMinHeadPos(readers);
 
                 yield return readers[minPos].Head;

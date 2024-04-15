@@ -12,8 +12,9 @@ public static class ExternalExceptByExtensions
     public static IExternalExceptByAsyncEnumerable<TSource> ExceptByExternal<TSource, TKey>(
         this IAsyncEnumerable<TSource> first,
         IAsyncEnumerable<TKey> second,
-        Func<TSource, TKey> keySelector) where TSource : new() where TKey : new()
+        Func<TSource, TKey> keySelector,
+        CancellationToken? abort = null) where TSource : new() where TKey : new()
     {
-        return new ExternalExceptByAsyncEnumerable<TSource, TKey>(first, second, keySelector);
+        return new ExternalExceptByAsyncEnumerable<TSource, TKey>(first, second, keySelector, abort ?? CancellationToken.None);
     }
 }

@@ -12,12 +12,14 @@ internal class ExternalExceptByAsyncEnumerable<TSource, TKey> : IExternalExceptB
     private readonly int _mbLimit = 200;
     private readonly int _openFilesLimit = 10;
     private readonly IComparer<TKey> _keyComparer;
+    private readonly CancellationToken _abort;
     
-    public ExternalExceptByAsyncEnumerable(IAsyncEnumerable<TSource> first, IAsyncEnumerable<TKey> second, Func<TSource,TKey> keySelector)
+    public ExternalExceptByAsyncEnumerable(IAsyncEnumerable<TSource> first, IAsyncEnumerable<TKey> second, Func<TSource,TKey> keySelector, CancellationToken abort)
     {
         _first = first;
         _second = second;
         _keySelector = keySelector;
+        _abort = abort;
         _keyComparer =  Comparer<TKey>.Default;
     }
 
@@ -26,12 +28,12 @@ internal class ExternalExceptByAsyncEnumerable<TSource, TKey> : IExternalExceptB
         int mbLimit,
         int openFilesLimit,
         IComparer<TKey> keyComparer,
-        IAsyncEnumerable<TSource> first, IAsyncEnumerable<TKey> second, Func<TSource,TKey> keySelector
-        )
+        IAsyncEnumerable<TSource> first, IAsyncEnumerable<TKey> second, Func<TSource,TKey> keySelector, CancellationToken abort)
     {
         _first = first;
         _second = second;
         _keySelector = keySelector;
+        _abort = abort;
 
         _calculateBytesInRam = calculateBytesInRam;
         _mbLimit = mbLimit;
@@ -44,12 +46,12 @@ internal class ExternalExceptByAsyncEnumerable<TSource, TKey> : IExternalExceptB
     public IAsyncEnumerator<TSource> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken())
     {
         var pairRows = _first
-            .GroupJoinExternal(_second, _keySelector, s => s, (f, s) => new SelectorPair<TSource>(f, s.Any()));
+            .GroupJoinExternal(_second, _keySelector, s => s, (f, s) => new SelectorPair<TSource>(f, s.Any()), _abort);
 
         return pairRows
             .Where(r => !r.HasAnyFromSecond)
             .Select(r => r.Item)
-            .DistinctUsingOrderedInput(_keySelector, _keyComparer)
+            .DistinctUsingOrderedInput(_keySelector, _keyComparer, _abort)
             .GetAsyncEnumerator(cancellationToken);
     }
 
@@ -58,6 +60,6 @@ internal class ExternalExceptByAsyncEnumerable<TSource, TKey> : IExternalExceptB
     {
         return new ExternalExceptByAsyncEnumerable<TSource, TKey>(calculateBytesInRam ?? _calculateBytesInRam,
             mbLimit ?? _mbLimit, openFilesLimit ?? _openFilesLimit,
-            _keyComparer, _first, _second, _keySelector);
+            _keyComparer, _first, _second, _keySelector, _abort);
     }
 }

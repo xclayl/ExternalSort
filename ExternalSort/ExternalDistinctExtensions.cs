@@ -9,9 +9,9 @@ public static class ExternalDistinctExtensions
     /// See https://josef.codes/sorting-really-large-files-with-c-sharp/ and https://en.wikipedia.org/wiki/External_sorting
     /// Parquet files are used for temporarily persisting to disk.  See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
     /// </summary>
-    public static IExternalDistinctAsyncEnumerable<T> DistinctExternal<T>(this IAsyncEnumerable<T> src) where T : IComparable<T>, new()
+    public static IExternalDistinctAsyncEnumerable<T> DistinctExternal<T>(this IAsyncEnumerable<T> src, CancellationToken? abort = null) where T : IComparable<T>, new()
     {
-        return new ExternalDistinctAsyncEnumerable<T>(src);
+        return new ExternalDistinctAsyncEnumerable<T>(src, abort ?? CancellationToken.None);
     }
 
 }

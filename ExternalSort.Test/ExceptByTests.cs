@@ -63,4 +63,26 @@ public class ExceptByTests
         actual.Should().BeEquivalentTo([(3, 300)]);
     }
 
+    
+            
+    [Fact]
+    public async Task CancellationToken()
+    {
+        List<int> mainList = [1, 3];
+        List<int> excludeList = [1, 2];
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            var actual = await mainList.ToAsyncList()
+                .ExceptByExternal(excludeList.ToAsyncList(), m => m, cts.Token)
+                .ToListAsync();
+        });
+
+
+    }
+
+
 }

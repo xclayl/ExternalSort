@@ -14,9 +14,10 @@ public static class ExternalGroupJoinExtensions
         IAsyncEnumerable<TInner> inner,
         Func<TOuter, TKey> outerKeySelector,
         Func<TInner, TKey> innerKeySelector,
-        Func<TOuter, IEnumerable<TInner>, TResult> resultSelector) where TOuter : new() where TInner : new()
+        Func<TOuter, IEnumerable<TInner>, TResult> resultSelector, 
+        CancellationToken? abort = null) where TOuter : new() where TInner : new()
     {
         return new ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult>(outer, inner, outerKeySelector,
-            innerKeySelector, resultSelector);
+            innerKeySelector, resultSelector, abort ?? CancellationToken.None);
     }
 }

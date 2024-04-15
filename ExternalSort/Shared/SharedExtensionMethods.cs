@@ -65,7 +65,8 @@ internal static class SharedExtensionMethods
     
     
     
-    internal static async IAsyncEnumerable<T> DistinctUsingOrderedInput<T, TKey>(this IAsyncEnumerable<T> source, Func<T, TKey> keySelector, IComparer<TKey> comparer)
+    internal static async IAsyncEnumerable<T> DistinctUsingOrderedInput<T, TKey>(this IAsyncEnumerable<T> source, Func<T, TKey> keySelector, IComparer<TKey> comparer,
+        [EnumeratorCancellation] CancellationToken abort)
     {
         var first = true;
         TKey previousKey = default;
@@ -82,7 +83,7 @@ internal static class SharedExtensionMethods
     }
     
     
-    internal static async IAsyncEnumerable<T> DistinctUsingOrderedInput<T>(this IAsyncEnumerable<T> source) where T : IComparable<T>
+    internal static async IAsyncEnumerable<T> DistinctUsingOrderedInput<T>(this IAsyncEnumerable<T> source, [EnumeratorCancellation] CancellationToken abort) where T : IComparable<T>
     {
         var first = true;
         T previousItem = default;
@@ -91,6 +92,7 @@ internal static class SharedExtensionMethods
         
         await foreach (var item in source)
         {
+            abort.ThrowIfCancellationRequested();
             if (first || comparer.Compare(previousItem, item) != 0)
                 yield return item;
 

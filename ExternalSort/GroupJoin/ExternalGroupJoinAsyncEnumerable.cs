@@ -13,6 +13,7 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
     private readonly Func<TOuter, TKey> _outerKeySelector;
     private readonly Func<TInner, TKey> _innerKeySelector;
     private readonly Func<TOuter, IEnumerable<TInner>, TResult> _resultSelector;
+    private readonly CancellationToken _abort;
 
     
     public ExternalGroupJoinAsyncEnumerable(
@@ -20,7 +21,8 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         IAsyncEnumerable<TInner> innerSource,
         Func<TOuter, TKey> outerKeySelector,
         Func<TInner, TKey> innerKeySelector,
-        Func<TOuter, IEnumerable<TInner>, TResult> resultSelector)
+        Func<TOuter, IEnumerable<TInner>, TResult> resultSelector, 
+        CancellationToken abort)
     {
         _keyComparer =  Comparer<TKey>.Default;
         _outerSource = outerSource;
@@ -28,6 +30,7 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         _outerKeySelector = outerKeySelector;
         _innerKeySelector = innerKeySelector;
         _resultSelector = resultSelector;
+        _abort = abort;
     }
 
     private ExternalGroupJoinAsyncEnumerable(Func<TOuter, long> calculateOuterBytesInRam, 
@@ -39,7 +42,8 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         IAsyncEnumerable<TInner> innerSource,
         Func<TOuter, TKey> outerKeySelector,
         Func<TInner, TKey> innerKeySelector,
-        Func<TOuter, IEnumerable<TInner>, TResult> resultSelector)
+        Func<TOuter, IEnumerable<TInner>, TResult> resultSelector, 
+        CancellationToken abort)
     {
         _calculateOuterBytesInRam = calculateOuterBytesInRam;
         _calculateInnerBytesInRam = calculateInnerBytesInRam;
@@ -52,7 +56,7 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         _outerKeySelector = outerKeySelector;
         _innerKeySelector = innerKeySelector;
         _resultSelector = resultSelector;
-
+        _abort = abort;
     }
     
     public IExternalGroupJoinAsyncEnumerable<TOuter, TInner, TResult> OptimiseFor(Func<TOuter, long>? calculateOuterBytesInRam = null,
@@ -67,7 +71,8 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
             _innerSource,
             _outerKeySelector,
             _innerKeySelector,
-            _resultSelector
+            _resultSelector,
+            _abort
             );
     }
     
@@ -83,13 +88,16 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
             _outerSource,
             _innerSource,
             _outerKeySelector,
-            _innerKeySelector);
+            _innerKeySelector,
+            _abort);
 
         var innerList = new List<TInner>();
         TKey previousOuterKey = default!;
         var first = true;
         await foreach (var outer in groupBy.ReadOuter().WithCancellation(cancellationToken))
         {
+            _abort.ThrowIfCancellationRequested();
+            
             var outerKey = _outerKeySelector(outer);
             
             if (!first && _keyComparer.Compare(previousOuterKey, outerKey) == 0)

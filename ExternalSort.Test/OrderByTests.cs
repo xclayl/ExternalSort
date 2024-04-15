@@ -303,6 +303,24 @@ public class OrderByTests
                 .OptimiseFor(openFilesLimit: 1);
         });
     }
+    
+        
+    [Fact]
+    public async Task CancellationToken()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            var actual = await source.ToAsyncList()
+                .OrderByExternal(u => u.Email, cts.Token)
+                .OptimiseFor(u => 100_000)
+                .ToListAsync();
+        });
+    }
 }
 
 

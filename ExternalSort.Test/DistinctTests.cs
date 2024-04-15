@@ -35,4 +35,26 @@ public class DistinctTests
 
         actual.Should().Equal(source.Distinct().OrderBy(u => u).ToList());
     }
+    
+        
+    [Fact]
+    public async Task CancellationToken()
+    {
+        var source = await RowGenerator.GenerateUsers(10_000).Select(u => u.Firstname).ToListAsync();
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            var actual = await source.ToAsyncList()
+                .Select(s => new Scalar<string>(s))
+                .DistinctExternal(cts.Token)
+                .OptimiseFor(calculateBytesInRam: u => 100_000)
+                .Select(s => s.Value)
+                .ToListAsync();
+        });
+
+    }
+
 }

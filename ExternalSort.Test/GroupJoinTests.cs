@@ -169,17 +169,36 @@ public class GroupJoinTests
 
 
 
-    
+    [Fact]
+    public async Task CancellationToken()
+    {
+        List<int> parents = [1, 3];
+        List<(int parent, int val)> children = [(1, 100), (1, 101), (2, 200)];
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            var actual = await parents.ToAsyncList()
+                .GroupJoinExternal(children.ToAsyncList(), u => u, uc => uc.parent, (u, ucs) => new
+                {
+                    Parent = u,
+                    Children = ucs.ToList()
+                }, cts.Token)
+                .ToListAsync();
+        });
+
+    }
+
     
 }
 
 
 /*
- * * GroupJoin (left outer join) 
- * * ExceptBy (not in)
  * IntersectBy (inner join)
  * not sure how: (full outer join). possible if both have unique keys
  * DistinctBy
  * GroupBy
- * Implicit scalars: string, "where T : IBinaryInteger<T>", Guid
+ * Implicit scalars: string
 */
