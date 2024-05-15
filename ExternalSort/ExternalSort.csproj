@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.2.0-beta001</Version>
+        <Version>1.2.0</Version>
         <Title>ExternalSort</Title>
         <Authors>Clay Lenhart</Authors>
         <Description>Sorts data that is larger than available RAM.</Description>
