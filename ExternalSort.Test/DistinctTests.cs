@@ -1,4 +1,6 @@
-﻿namespace ExternalSort.Test;
+﻿using ExternalSort.Scalars;
+
+namespace ExternalSort.Test;
 
 public class DistinctTests
 {
@@ -9,7 +11,7 @@ public class DistinctTests
         var source = await RowGenerator.GenerateUsers(100).Select(u => u.Firstname).ToListAsync();
 
         var actual = await source.ToAsyncList()
-            .Select(s => new Scalar<string>(s))
+            .Select(s => new OrdinalString(s))
             .DistinctExternal()
             .OptimiseFor(calculateBytesInRam: u => u.Value.Length * 2)
             .Select(s => s.Value)
@@ -48,13 +50,29 @@ public class DistinctTests
         await Assert.ThrowsAsync<OperationCanceledException>(async () =>
         {
             var actual = await source.ToAsyncList()
-                .Select(s => new Scalar<string>(s))
+                .Select(s => new OrdinalString(s))
                 .DistinctExternal(cts.Token)
                 .OptimiseFor(calculateBytesInRam: u => 100_000)
                 .Select(s => s.Value)
                 .ToListAsync();
         });
-
     }
 
+    
+    [Fact]
+    public async Task HappyPath_TwoNulls()
+    {
+        List<string?> sourceA = ["a", null, "b", null];
+        var source = sourceA.Select(s => new OrdinalString(s)).ToList();
+    
+        var actual = await source.ToAsyncList()
+            .DistinctExternal()
+            .OptimiseFor(calculateBytesInRam: u => u.Value?.Length * 2 ?? 1)
+            //.Select(s => s.Value)
+            .ToListAsync();
+    
+        actual.Should().HaveCount(source.Distinct().Count());
+    
+        actual.Should().Equal(source.DistinctBy(s => s.Value).OrderBy(u => u.Value).ToList());
+    }
 }

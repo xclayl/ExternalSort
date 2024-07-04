@@ -2,10 +2,9 @@
 
 namespace ExternalSort.Shared;
 
-internal class ObjKeyComparer<T, TK> : IComparer<T>
+internal class ObjKeyComparer<T, TK> : IComparer<T> where TK : IComparable<TK>
 {
     private readonly OrderByPair<T, TK> _orderByPair;
-    private readonly Comparer<TK> _keyComparer = Comparer<TK>.Default;
 
     public ObjKeyComparer(OrderByPair<T, TK> orderByPair)
     {
@@ -16,7 +15,6 @@ internal class ObjKeyComparer<T, TK> : IComparer<T>
     {
         var xKey = _orderByPair.KeySelector(x);
         var yKey = _orderByPair.KeySelector(y);
-        return (_orderByPair.OrderBy == OrderBy.OrderBy.Asc ? 1 : -1) * _keyComparer.Compare(xKey, yKey);
-        
+        return (_orderByPair.OrderBy == OrderBy.OrderBy.Asc ? 1 : -1) * CompareUtil.Compare(xKey, yKey);
     }
 }

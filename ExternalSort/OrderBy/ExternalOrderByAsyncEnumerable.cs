@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+﻿using ExternalSort.Scalars;
 using ExternalSort.Shared;
 
 namespace ExternalSort.OrderBy;
@@ -10,7 +10,9 @@ internal enum OrderBy
     Desc
 }
 
-internal class ExternalOrderByAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnumerable<T> where T : new()
+internal class ExternalOrderByAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnumerable<T> 
+    where T : new()
+    where TK : IComparable<TK>
 {
     private readonly Func<T, long> _calculateBytesInRam = r => 300L;
     private readonly int _mbLimit = 200;
@@ -53,13 +55,13 @@ internal class ExternalOrderByAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnum
         return new ExternalOrderByAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src, _orderByPairs, dir, _abort);
     }
 
-    public IExternalOrderByAsyncEnumerable<T> ThenBy<TK1>(Func<T, TK1> keySelector)
+    public IExternalOrderByAsyncEnumerable<T> ThenBy<TK1>(Func<T, TK1> keySelector) where TK1 : IComparable<TK1>
     {
         return new ExternalOrderByAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
             _orderByPairs.Concat([new ObjKeyComparer<T,TK1>(new (keySelector, OrderBy.Asc))]).ToList(), _tempDir, _abort);
     }
 
-    public IExternalOrderByAsyncEnumerable<T> ThenByDescending<TK1>(Func<T, TK1> keySelector)
+    public IExternalOrderByAsyncEnumerable<T> ThenByDescending<TK1>(Func<T, TK1> keySelector) where TK1 : IComparable<TK1>
     {
         return new ExternalOrderByAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
             _orderByPairs.Concat([new ObjKeyComparer<T,TK1>(new (keySelector, OrderBy.Desc))]).ToList(), _tempDir, _abort);
@@ -76,7 +78,9 @@ internal class ExternalOrderByAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnum
 }
 
 
-internal class ExternalOrderByScalarAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnumerable<T> where T : new()
+internal class ExternalOrderByScalarAsyncEnumerable<T, TK> : IExternalOrderByAsyncEnumerable<T> 
+    where T : new() 
+    where TK : IComparable<TK>
 {
     private readonly Func<T, long> _calculateBytesInRam = r => 300L;
     private readonly int _mbLimit = 200;
@@ -119,13 +123,13 @@ internal class ExternalOrderByScalarAsyncEnumerable<T, TK> : IExternalOrderByAsy
         return new ExternalOrderByScalarAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src, _orderByPairs, _tempDir, _abort);
     }
 
-    public IExternalOrderByAsyncEnumerable<T> ThenBy<TK1>(Func<T, TK1> keySelector)
+    public IExternalOrderByAsyncEnumerable<T> ThenBy<TK1>(Func<T, TK1> keySelector) where TK1 : IComparable<TK1>
     {
         return new ExternalOrderByScalarAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
             _orderByPairs.Concat([new ObjKeyComparer<Scalar<T>,TK1>(new (o => keySelector(o.Value), OrderBy.Asc))]).ToList(), _tempDir, _abort);
     }
 
-    public IExternalOrderByAsyncEnumerable<T> ThenByDescending<TK1>(Func<T, TK1> keySelector)
+    public IExternalOrderByAsyncEnumerable<T> ThenByDescending<TK1>(Func<T, TK1> keySelector) where TK1 : IComparable<TK1>
     {
         return new ExternalOrderByScalarAsyncEnumerable<T, TK>(_calculateBytesInRam, _mbLimit, _openFilesLimit, _src,
             _orderByPairs.Concat([new ObjKeyComparer<Scalar<T>,TK1>(new (o => keySelector(o.Value), OrderBy.Desc))]).ToList(), _tempDir, _abort);
@@ -140,3 +144,5 @@ internal class ExternalOrderByScalarAsyncEnumerable<T, TK> : IExternalOrderByAsy
             yield return row.Value;
     }
 }
+
+

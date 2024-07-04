@@ -15,7 +15,7 @@ public static class ExternalGroupJoinExtensions
         Func<TOuter, TKey> outerKeySelector,
         Func<TInner, TKey> innerKeySelector,
         Func<TOuter, IEnumerable<TInner>, TResult> resultSelector, 
-        CancellationToken? abort = null) where TOuter : new() where TInner : new()
+        CancellationToken? abort = null) where TOuter : new() where TInner : new() where TKey : IComparable<TKey>
     {
         return new ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult>(outer, inner, outerKeySelector,
             innerKeySelector, resultSelector, abort ?? CancellationToken.None);

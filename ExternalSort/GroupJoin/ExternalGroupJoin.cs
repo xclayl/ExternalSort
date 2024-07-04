@@ -1,12 +1,13 @@
-﻿namespace ExternalSort.GroupJoin;
+﻿using ExternalSort.Shared;
 
-internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposable where TOuter : new() where TInner : new()
+namespace ExternalSort.GroupJoin;
+
+internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposable where TOuter : new() where TInner : new() where TKey : IComparable<TKey>
 {
     private readonly Func<TOuter, long> _calculateOuterBytesInRam;
     private readonly Func<TInner, long> _calculateInnerBytesInRam;
     private readonly int _mbLimit;
     private readonly int _openFilesLimit;
-    private readonly IComparer<TKey> _keyComparer;
     private readonly IAsyncEnumerable<TOuter> _outerSource;
     private readonly Func<TOuter, TKey> _outerKeySelector;
     private readonly Func<TInner, TKey> _innerKeySelector;
@@ -18,7 +19,7 @@ internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposab
     private readonly CancellationToken _abort;
 
     public ExternalGroupJoin(Func<TOuter,long> calculateOuterBytesInRam, Func<TInner, long> calculateInnerBytesInRam, 
-        int mbLimit, int openFilesLimit, IComparer<TKey> keyComparer, IAsyncEnumerable<TOuter> outerSource,
+        int mbLimit, int openFilesLimit, IAsyncEnumerable<TOuter> outerSource,
         IAsyncEnumerable<TInner> innerSource, Func<TOuter, TKey> outerKeySelector, Func<TInner, TKey> innerKeySelector,
         CancellationToken abort)
     {
@@ -26,7 +27,6 @@ internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposab
         _calculateInnerBytesInRam = calculateInnerBytesInRam;
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
-        _keyComparer = keyComparer;
         _outerSource = outerSource;
         _outerKeySelector = outerKeySelector;
         _innerKeySelector = innerKeySelector;
@@ -64,11 +64,11 @@ internal class ExternalGroupJoin<TOuter, TInner, TKey, TResult> : IAsyncDisposab
             return;
 
 
-        while (_innerReaderHasNext && _keyComparer.Compare(outerKey, _nextKey!) > 0)
+        while (_innerReaderHasNext && CompareUtil.Compare(outerKey, _nextKey!) > 0)
             await ReadNextInner();
      
 
-        while (_innerReaderHasNext && _keyComparer.Compare(outerKey, _nextKey) == 0)
+        while (_innerReaderHasNext && CompareUtil.Compare(outerKey, _nextKey) == 0)
         {
             destInnerList.Add(_next!);
             await ReadNextInner();

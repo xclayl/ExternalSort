@@ -1,13 +1,14 @@
-﻿namespace ExternalSort.GroupJoin;
+﻿using ExternalSort.Shared;
+
+namespace ExternalSort.GroupJoin;
 
 internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> : IExternalGroupJoinAsyncEnumerable<TOuter, TInner, TResult> 
-    where TOuter : new() where TInner : new()
+    where TOuter : new() where TInner : new() where TKey : IComparable<TKey>
 {
     private readonly Func<TOuter, long> _calculateOuterBytesInRam = o => 300;
     private readonly Func<TInner, long> _calculateInnerBytesInRam = o => 300;
     private readonly int _mbLimit = 200;
     private readonly int _openFilesLimit = 10;
-    private readonly IComparer<TKey> _keyComparer;
     private readonly IAsyncEnumerable<TOuter> _outerSource;
     private readonly IAsyncEnumerable<TInner> _innerSource;
     private readonly Func<TOuter, TKey> _outerKeySelector;
@@ -24,7 +25,6 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         Func<TOuter, IEnumerable<TInner>, TResult> resultSelector, 
         CancellationToken abort)
     {
-        _keyComparer =  Comparer<TKey>.Default;
         _outerSource = outerSource;
         _innerSource = innerSource;
         _outerKeySelector = outerKeySelector;
@@ -37,7 +37,6 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         Func<TInner, long> calculateInnerBytesInRam,
         int mbLimit,
         int openFilesLimit,
-        IComparer<TKey> keyComparer,
         IAsyncEnumerable<TOuter> outerSource,
         IAsyncEnumerable<TInner> innerSource,
         Func<TOuter, TKey> outerKeySelector,
@@ -50,7 +49,6 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
         _mbLimit = mbLimit;
         _openFilesLimit = openFilesLimit;
         
-        _keyComparer = keyComparer;
         _outerSource = outerSource;
         _innerSource = innerSource;
         _outerKeySelector = outerKeySelector;
@@ -66,7 +64,6 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
             calculateInnerBytesInRam ?? _calculateInnerBytesInRam,
             mbLimit ?? _mbLimit,
             openFilesLimit ?? _openFilesLimit,
-            _keyComparer,
             _outerSource,
             _innerSource,
             _outerKeySelector,
@@ -84,7 +81,6 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
             _calculateInnerBytesInRam,
             _mbLimit,
             _openFilesLimit,
-            _keyComparer,
             _outerSource,
             _innerSource,
             _outerKeySelector,
@@ -100,7 +96,7 @@ internal class ExternalGroupJoinAsyncEnumerable<TOuter, TInner, TKey, TResult> :
             
             var outerKey = _outerKeySelector(outer);
             
-            if (!first && _keyComparer.Compare(previousOuterKey, outerKey) == 0)
+            if (!first && CompareUtil.Compare(previousOuterKey, outerKey) == 0)
             {
                 yield return _resultSelector(outer, innerList);
                 continue;

@@ -1,4 +1,6 @@
 ﻿using ExternalSort.OrderBy;
+using ExternalSort.Scalars;
+using ExternalSort.Shared;
 
 namespace ExternalSort;
 
@@ -12,7 +14,9 @@ public static class ExternalOrderByExtensions
     /// Parquet files are used for temporarily persisting to disk.  See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
     /// Rows with duplicate keys are preserved. The order between them will be random.
     /// </summary>
-    public static IExternalOrderByAsyncEnumerable<T> OrderByExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector, CancellationToken? abort = null) where T : new()
+    public static IExternalOrderByAsyncEnumerable<T> OrderByExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector, CancellationToken? abort = null) 
+        where T : new()
+        where TK : IComparable<TK>
     {
         abort ??= CancellationToken.None;
         return typeof(T).IsValueType switch
@@ -29,7 +33,9 @@ public static class ExternalOrderByExtensions
     /// Parquet files are used for temporarily persisting to disk.  See https://github.com/aloneguid/parquet-dotnet for class serialisation options.
     /// Rows with duplicate keys are preserved. The order between them will be random.
     /// </summary>
-    public static IExternalOrderByAsyncEnumerable<T> OrderByDescendingExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector, CancellationToken? abort = null) where T : new() 
+    public static IExternalOrderByAsyncEnumerable<T> OrderByDescendingExternal<T, TK>(this IAsyncEnumerable<T> src, Func<T, TK> keySelector, CancellationToken? abort = null) 
+        where T : new() 
+        where TK : IComparable<TK>
     {
         abort ??= CancellationToken.None;
         return typeof(T).IsValueType switch

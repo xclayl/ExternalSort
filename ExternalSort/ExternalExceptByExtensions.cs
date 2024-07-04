@@ -13,7 +13,9 @@ public static class ExternalExceptByExtensions
         this IAsyncEnumerable<TSource> first,
         IAsyncEnumerable<TKey> second,
         Func<TSource, TKey> keySelector,
-        CancellationToken? abort = null) where TSource : new() where TKey : new()
+        CancellationToken? abort = null) 
+        where TSource : new() 
+        where TKey : IComparable<TKey>, new()
     {
         return new ExternalExceptByAsyncEnumerable<TSource, TKey>(first, second, keySelector, abort ?? CancellationToken.None);
     }

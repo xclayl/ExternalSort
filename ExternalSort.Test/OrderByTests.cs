@@ -1,3 +1,5 @@
+using ExternalSort.Scalars;
+
 namespace ExternalSort.Test;
 
 public class OrderByTests
@@ -22,6 +24,24 @@ public class OrderByTests
     }
     
     
+    
+    [Fact]
+    public async Task HappyPath_SpecifySortOrder()
+    {
+        
+        List<string> sourceA = ["a", "A"];
+        var source = sourceA.Select(s => new OrdinalString(s)).ToList();
+
+        var actual = await source.ToAsyncList()
+            .OrderByExternal()
+            .OptimiseFor(calculateBytesInRam: u => u.Value.Length)
+            .ToListAsync();
+
+        actual.Should().HaveCount(source.Count);
+
+        actual.Should().Equal(source.OrderBy(u => u).ToList());
+    }
+
     
     
     [Fact]
