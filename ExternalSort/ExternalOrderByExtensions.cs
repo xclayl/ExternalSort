@@ -1,6 +1,4 @@
 ﻿using ExternalSort.OrderBy;
-using ExternalSort.Scalars;
-using ExternalSort.Shared;
 
 namespace ExternalSort;
 
@@ -18,6 +16,10 @@ public static class ExternalOrderByExtensions
         where T : new()
         where TK : IComparable<TK>
     {
+        if (typeof(TK) == typeof(string))
+            throw new InvalidDatatypeException(
+                "Sorting by strings without specifying the sort order is not available.  Please use one of the wrapper classes, like OrdinalString that specifies an order");
+        
         abort ??= CancellationToken.None;
         return typeof(T).IsValueType switch
         {
@@ -37,6 +39,11 @@ public static class ExternalOrderByExtensions
         where T : new() 
         where TK : IComparable<TK>
     {
+        if (typeof(TK) == typeof(string))
+            throw new InvalidDatatypeException(
+                "Sorting by strings without specifying the sort order is not available.  Please use one of the wrapper classes, like OrdinalString that specifies an order");
+
+        
         abort ??= CancellationToken.None;
         return typeof(T).IsValueType switch
         {
@@ -55,6 +62,11 @@ public static class ExternalOrderByExtensions
     /// </summary>
     public static IExternalOrderByAsyncEnumerable<T> OrderByExternal<T>(this IAsyncEnumerable<T> src, CancellationToken? abort = null) where T : IComparable<T>, new()
     {
+        if (typeof(T) == typeof(string))
+            throw new InvalidDatatypeException(
+                "Sorting by strings without specifying the sort order is not available.  Please use one of the wrapper classes, like OrdinalString that specifies an order");
+
+        
         abort ??= CancellationToken.None;
         return typeof(T).IsValueType switch
         {

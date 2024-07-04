@@ -14,7 +14,7 @@ public class OrderByTests
         var source = await RowGenerator.GenerateUsers(10).ToListAsync();
 
         var actual = await source.ToAsyncList()
-            .OrderByExternal(u => u.Email)
+            .OrderByExternal(u => new OrdinalString(u.Email))
             .OptimiseFor(calculateBytesInRam: u => u.CalculateSize())
             .ToListAsync();
 
@@ -24,6 +24,8 @@ public class OrderByTests
     }
     
     
+
+
     
     [Fact]
     public async Task HappyPath_SpecifySortOrder()
@@ -50,13 +52,13 @@ public class OrderByTests
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
         var actual = await source.ToAsyncList()
-            .OrderByExternal(u => u.Email)
+            .OrderByExternal(u => new OrdinalString(u.Email))
             .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
             .ToListAsync();
 
         actual.Should().HaveCount(source.Count);
         
-        var expected = source.OrderBy(u => u.Email).ToList();
+        var expected = source.OrderBy(u => new OrdinalString(u.Email)).ToList();
         
         actual.Should().Equal(expected);
     }
@@ -89,7 +91,7 @@ public class OrderByTests
 
         var actual = await source
             .ToAsyncList()
-            .OrderByExternal(u => u.SomethingUnique)
+            .OrderByExternal(u => new OrdinalString(u.SomethingUnique))
             .OptimiseFor(calculateBytesInRam: u => 1_000 /* pretend these use more RAM */)
             .UseTempDir(Path.Combine(Path.GetTempPath(), $"abc_{Guid.NewGuid()}"))
             .ToListAsync();
@@ -168,13 +170,13 @@ public class OrderByTests
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
         var actual = await source.ToAsyncList()
-            .OrderByDescendingExternal(u => u.Email)
+            .OrderByDescendingExternal(u => new OrdinalString(u.Email))
             .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
             .ToListAsync();
 
         actual.Should().HaveCount(source.Count);
         
-        var expected = source.OrderByDescending(u => u.Email).ToList();
+        var expected = source.OrderByDescending(u => new OrdinalString(u.Email)).ToList();
         
         actual.Should().Equal(expected);
     }
@@ -187,7 +189,7 @@ public class OrderByTests
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
         var actual = await source.ToAsyncList()
-            .OrderByExternal(u => u.Firstname)
+            .OrderByExternal(u => new OrdinalString(u.Firstname))
             .ThenBy(u => u.SomethingUnique)
             .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
             .ToListAsync();
@@ -206,8 +208,8 @@ public class OrderByTests
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
         var actual = await source.ToAsyncList()
-            .OrderByExternal(u => u.Firstname)
-            .ThenByDescending(u => u.SomethingUnique)
+            .OrderByExternal(u => new OrdinalString(u.Firstname))
+            .ThenByDescending(u => new OrdinalString(u.SomethingUnique))
             .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 100 /* pretend these use more RAM */)
             .ToListAsync();
 
@@ -226,13 +228,13 @@ public class OrderByTests
         var source = await RowGenerator.GenerateUsers(10_000).ToListAsync();
 
         var actual = await source.ToAsyncList()
-            .OrderByExternal(u => u.Email)
+            .OrderByExternal(u => new OrdinalString(u.Email))
             .OptimiseFor(calculateBytesInRam: u => u.CalculateSize() * 1_000 /* pretend these use more RAM */)
             .ToListAsync();
 
         actual.Should().HaveCount(source.Count);
 
-        actual.Should().Equal(source.OrderBy(u => u.Email).ToList());
+        actual.Should().Equal(source.OrderBy(u => new OrdinalString(u.Email)).ToList());
     }
 
     
@@ -244,7 +246,7 @@ public class OrderByTests
         var source = RowGenerator.GenerateUsers(sourceCount);
 
         var actual = source
-            .OrderByExternal(u => u.Email)
+            .OrderByExternal(u => new OrdinalString(u.Email))
             .OptimiseFor(calculateBytesInRam: u => 1_000, mbLimit: 1, openFilesLimit: 10);
 
         var actualCount = 0;
@@ -257,13 +259,14 @@ public class OrderByTests
     
     
     [Fact(Skip = "Takes 5 minutes")]
+    // [Fact]
     public async Task HappyPath_10MillionSpeedTest()
     {
         var sourceCount = 10_000_000;
         var source = RowGenerator.GenerateUsers(sourceCount);
 
         var actual = source
-            .OrderByExternal(u => u.Email)
+            .OrderByExternal(u => new OrdinalString(u.Email))
             .OptimiseFor(mbLimit: 50);
 
         var actualCount = 0;
@@ -281,7 +284,7 @@ public class OrderByTests
         var source = RowGenerator.GenerateUsers(sourceCount);
 
         var actual = source
-            .OrderByExternal(u => u.Email)
+            .OrderByExternal(u => new OrdinalString(u.Email))
             .OptimiseFor(calculateBytesInRam: u => 0);
 
         var actualCount = 0;
@@ -305,7 +308,7 @@ public class OrderByTests
         await Assert.ThrowsAsync<ArgumentException>(async () =>
         {
             var actual = source
-                .OrderByExternal(u => u.Email)
+                .OrderByExternal(u => new OrdinalString(u.Email))
                 .OptimiseFor(mbLimit: 0);
         });
     }
@@ -319,7 +322,7 @@ public class OrderByTests
         await Assert.ThrowsAsync<ArgumentException>(async () =>
         {
             var actual = source
-                .OrderByExternal(u => u.Email)
+                .OrderByExternal(u => new OrdinalString(u.Email))
                 .OptimiseFor(openFilesLimit: 1);
         });
     }
@@ -336,11 +339,29 @@ public class OrderByTests
         await Assert.ThrowsAsync<OperationCanceledException>(async () =>
         {
             var actual = await source.ToAsyncList()
-                .OrderByExternal(u => u.Email, cts.Token)
+                .OrderByExternal(u => new OrdinalString(u.Email), cts.Token)
                 .OptimiseFor(u => 100_000)
                 .ToListAsync();
         });
     }
+    
+    
+    [Fact]
+    public async Task StringsNotSupported()
+    {
+        var source = await RowGenerator.GenerateUsers(10).ToListAsync();
+
+        
+        await Assert.ThrowsAsync<InvalidDatatypeException>(async () =>
+        {
+            var actual = await source.ToAsyncList()
+                .OrderByExternal(u => u.Email)
+                .OptimiseFor(calculateBytesInRam: u => u.CalculateSize())
+                .ToListAsync();
+        });
+     
+    }
+
 }
 
 
